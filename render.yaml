@@ -1,0 +1,28 @@
+services:
+  - type: web
+    name: shape-up-demo
+    runtime: node
+    plan: free
+    region: singapore
+    buildCommand: npm --prefix backend ci && npm --prefix frontend ci --include=dev && npm run build
+    startCommand: npm --prefix backend start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_VERSION
+        value: '22'
+      - key: NODE_ENV
+        value: production
+      - key: CI
+        value: 'false'
+      - key: MONGO_URI
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: SERVE_FRONTEND
+        value: 'true'
+      - key: TRUST_PROXY
+        value: '1'
+      - key: EMAIL_ENABLED
+        value: 'false'
+      - key: AI_ENABLED
+        value: 'false'

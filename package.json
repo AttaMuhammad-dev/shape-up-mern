@@ -1,0 +1,12 @@
+{
+  "name": "shape-up-showcase",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "build": "npm --prefix frontend run build",
+    "start": "npm --prefix backend start",
+    "test:deployment": "node --test backend/tests/deployment.test.js"
+  }
+}

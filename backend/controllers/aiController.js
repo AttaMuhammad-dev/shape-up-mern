@@ -41,12 +41,19 @@ async function getAvailableModel(apiKey) {
 const chatWithAI = asyncHandler(async (req, res) => {
   const { message, userData } = req.body;
 
+  if (process.env.AI_ENABLED !== 'true') {
+    return res.status(503).json({ reply: 'AI service/API unavailable in this demo. The external AI API is not currently configured. Please try the workout and calculator tools.' });
+  }
+  if (typeof message !== 'string' || !message.trim() || message.length > 2000) {
+    return res.status(400).json({ reply: 'Please enter a message between 1 and 2000 characters.' });
+  }
+
   // 1. Load & sanitize key
   const API_KEY = process.env.GEMINI_API_KEY ? process.env.GEMINI_API_KEY.trim() : null;
 
   if (!API_KEY) {
     console.error("❌ CRITICAL: GEMINI_API_KEY is missing.");
-    return res.status(500).json({ reply: "System Error: API Key missing." });
+    return res.status(503).json({ reply: 'AI coaching is temporarily unavailable.' });
   }
 
   // 2. Prepare Context

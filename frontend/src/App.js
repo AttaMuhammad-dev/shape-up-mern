@@ -14,6 +14,9 @@ import './App.css'; // Your specific component styles
 const App = () => {
   return (
     <div className="App" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+      <div role="note" style={{ textAlign: 'center', padding: '8px 16px', background: '#173f35', color: '#fff', fontSize: '13px' }}>
+        Portfolio demo · Use sample details only · AI coaching and email are unavailable
+      </div>
       <ToastContainer />
       
       {/* Header controls the Dark Mode toggle */}
