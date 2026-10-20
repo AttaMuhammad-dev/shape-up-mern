@@ -7,6 +7,6 @@
   "scripts": {
     "build": "npm --prefix frontend run build",
     "start": "npm --prefix backend start",
-    "test:deployment": "node --test backend/tests/deployment.test.js backend/tests/aiStability.test.js backend/tests/aiRouteIsolation.test.js backend/tests/profilePassword.test.js backend/tests/nutritionLog.test.js"
+    "test:deployment": "node --test backend/tests/deployment.test.js backend/tests/aiStability.test.js backend/tests/aiRouteIsolation.test.js backend/tests/profilePassword.test.js backend/tests/nutritionLog.test.js backend/tests/reminders.test.js"
   }
 }

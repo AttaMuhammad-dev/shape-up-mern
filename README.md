@@ -24,6 +24,8 @@ Profile saves preserve unchanged password hashes and use the backend's actual im
 
 The first food logged on a new day now contributes its calories immediately. Backend runtime dependencies were updated within compatible ranges, the unused legacy AI SDK/proxy/React Query dependencies were removed, and the unused backend Babel/Jest stack was replaced by native Node tests. Development reload uses Node's built-in watch mode. Nodemailer was updated while email remains disabled; real email delivery still needs separate provider configuration and validation.
 
+Reminders use a dedicated Reminder model rather than the review collection, and retain their date, time, category and priority. Invalid model fields return a validation response instead of a generic server failure. Existing reviews are preserved; no review records are migrated or deleted.
+
 Before sharing a demo link, verify registration, login, refresh, logout, saving a workout, nutrition/water logs, and a direct visit to `/dashboard` using a fresh browser session. `/api/health` tests the HTTP service; it does not establish that MongoDB is reachable.
 
 ## Validation

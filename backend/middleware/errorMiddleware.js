@@ -12,6 +12,8 @@ const notFound = (req, res, next) => {
       statusCode = 404;
       message = "Resource not found";
     }
+    if (err.name === 'ValidationError') {statusCode=400;message='Please check the required fields and use valid values.';}
+    if (err.code === 11000) {statusCode=409;message='That record already exists.';}
   
     res.status(statusCode).json({
       message,

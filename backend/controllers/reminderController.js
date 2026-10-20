@@ -13,7 +13,7 @@ const getReminders = asyncHandler(async (req, res) => {
 // @route   POST /api/reminders
 // @access  Private
 const createReminder = asyncHandler(async (req, res) => {
-  const { title, time, type } = req.body;
+  const { title, time, type, date = new Date().toISOString().slice(0,10), priority = 'Normal' } = req.body;
   
   if (!title || !time) {
     res.status(400);
@@ -25,6 +25,8 @@ const createReminder = asyncHandler(async (req, res) => {
     title,
     time,
     type,
+    date,
+    priority,
   });
 
   res.status(201).json(reminder);
