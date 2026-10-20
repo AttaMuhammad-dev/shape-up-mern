@@ -26,7 +26,7 @@ export default function Settings(){
  const remove=async()=>{
   if(!password||confirmation!=='DELETE'||deleting)return;
   setDeleting(true);
-  try{await axios.delete('/api/users/profile',{data:{password,confirmation},timeout:25000});dispatch(logout());navigate('/pages/register',{replace:true});toast.success('Your account and related data have been deleted.');}
+  try{await axios.delete('/api/users/profile',{data:{password,confirmation},timeout:25000});if(localStorage.getItem("rememberUser")===userInfo.email)localStorage.removeItem("rememberUser");dispatch(logout());navigate('/pages/register',{replace:true});toast.success('Your account and related data have been deleted.');}
   catch(error){toast.error(error.response?.data?.message||'Account deletion failed. Please try again.');}
   finally{setDeleting(false);}
  };

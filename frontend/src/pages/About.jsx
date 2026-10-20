@@ -31,7 +31,6 @@ const AboutUs = () => {
           </Col>
         </Row>
       </Container>
-      <Footer />
     </>
   );
 };

@@ -37,7 +37,7 @@ const Settings=lazy(()=>import('./pages/Settings.jsx'));
 
 const router = createBrowserRouter(
   createRoutesFromElements(
-    <Route path="/" element={<App />}>
+    <Route path="/" element={<App />} errorElement={<section role="alert" className="container p-5"><h1>Shape Up could not open this page</h1><p>Please reload once. Your saved account records are stored on the server.</p><button onClick={()=>window.location.reload()}>Reload page</button> <a href="/">Return home</a></section>}>
       {/* ... routes same rahenge ... */}
       <Route index={true} path="/" element={<Home />} />
       <Route path="/pages/features" element={<Features />} />

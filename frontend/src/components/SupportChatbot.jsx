@@ -1,10 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Card, Button, Form, InputGroup, Spinner } from "react-bootstrap";
-import SendIcon from "@mui/icons-material/Send";
-import SmartToyIcon from "@mui/icons-material/SmartToy";
-import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome";
-import CloseIcon from "@mui/icons-material/Close"; // 👈 Close icon added
-import ChatIcon from "@mui/icons-material/Chat";   // 👈 Chat bubble icon added
+import {FaPaperPlane as SendIcon,FaRobot as SmartToyIcon,FaMagic as AutoAwesomeIcon,FaTimes as CloseIcon,FaCommentDots as ChatIcon} from 'react-icons/fa';
 import axios from "axios";
 import { useSelector } from "react-redux";
 

@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Card, Button, ProgressBar, Spinner } from "react-bootstrap";
-import DirectionsRunIcon from '@mui/icons-material/DirectionsRun';
-import CloudUploadIcon from '@mui/icons-material/CloudUpload';
-import RestartAltIcon from '@mui/icons-material/RestartAlt';
+import {FaRunning as DirectionsRunIcon} from 'react-icons/fa';
+import {FaCloudUploadAlt as CloudUploadIcon,FaUndo as RestartAltIcon} from 'react-icons/fa';
 import { toast } from "react-toastify";
 
 // 👇 Now accepting 'goal' prop

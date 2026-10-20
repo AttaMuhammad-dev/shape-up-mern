@@ -9,11 +9,7 @@ import { toast } from "react-toastify";
 import {ThemeContext} from '../context/ThemeContext';
 import {dueReminders,localDay} from '../utils/reminders';
 // Icons
-import MenuIcon from "@mui/icons-material/Menu";
-import CloseIcon from "@mui/icons-material/Close";
-import NotificationsActiveIcon from "@mui/icons-material/NotificationsActive";
-import DarkModeIcon from "@mui/icons-material/DarkMode";
-import LightModeIcon from "@mui/icons-material/LightMode";
+import {FaBars as MenuIcon,FaTimes as CloseIcon,FaBell as NotificationsActiveIcon,FaMoon as DarkModeIcon,FaSun as LightModeIcon} from 'react-icons/fa';
 import Logo from "../assets/images/Logo.png";
 
 // IMPORTS FOR NOTIFICATIONS
@@ -154,7 +150,7 @@ const Header = () => {
             
             {userInfo && (
                 <NavLink to="/notifications">
-                    <NotificationsActiveIcon sx={{ fontSize: "1.2rem", marginBottom: "3px", marginRight: "3px", color: "#e63946" }} />
+                    <NotificationsActiveIcon style={{ fontSize: "1.2rem", marginBottom: "3px", marginRight: "3px", color: "#e63946" }} />
                     Alerts
                 </NavLink>
             )}
@@ -162,8 +158,8 @@ const Header = () => {
           
           <Nav className="align-items-center">
             {/* DARK MODE TOGGLE BUTTON - THIS WAS MISSING */}
-            <Nav.Link onClick={toggleTheme} style={{ cursor: "pointer", marginRight: "10px" }}>
-                {darkMode ? <LightModeIcon sx={{ color: "#f1c40f" }} /> : <DarkModeIcon sx={{ color: "#34495e" }} />}
+            <Nav.Link aria-label={darkMode?'Switch to light theme':'Switch to dark theme'} onClick={toggleTheme} style={{ cursor: "pointer", marginRight: "10px" }}>
+                {darkMode ? <LightModeIcon style={{ color: "#f1c40f" }} /> : <DarkModeIcon style={{ color: "#34495e" }} />}
             </Nav.Link>
 
             {userInfo ? (

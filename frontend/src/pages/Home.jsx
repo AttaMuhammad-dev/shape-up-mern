@@ -65,10 +65,10 @@ const Reveal = ({ children, className = "", delay = 0, animation = "fade-up" }) 
 // 2. DATA CONSTANTS
 // ==========================================
 const FAQS = [
-    { q: "Is Shape Up suitable for beginners?", a: "Absolutely! We have tailored plans starting from absolute zero to pro athlete levels." },
+    { q: "Is Shape Up suitable for beginners?", a: "You can browse exercises, record your own routine and ask for general beginner coaching. Start with movements appropriate to your ability." },
     { q: "Do I need gym equipment?", a: "No. You can filter workouts by 'Bodyweight Only' or select specific equipment you own." },
     { q: "Can I track my water intake?", a: "Yes, we have a dedicated hydration logger with smart reminders." },
-    { q: "Is the diet plan customized?", a: "Our AI analyzes your BMR and goals to suggest precise macro targets." }
+    { q: "Is the diet plan customized?", a: "The BMR calculator estimates energy needs. You can write your own meal plan and ask the separate AI coach for general guidance; neither replaces qualified nutrition advice." }
 ];
 
 // ==========================================

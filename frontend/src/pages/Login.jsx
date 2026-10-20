@@ -333,7 +333,7 @@ const Login = () => {
                 <Form.Group className="mb-4" controlId="formBasicCheckbox">
                     <Form.Check 
                         type="checkbox" 
-                        label={<span className="small fw-bold text-adaptive-sub">Remember me for 30 days</span>}
+                        label={<span className="small fw-bold text-adaptive-sub">Remember my email on this device</span>}
                         checked={rememberMe}
                         onChange={(e) => setRememberMe(e.target.checked)}
                     />
@@ -368,8 +368,6 @@ const Login = () => {
           </Col>
         </Row>
       </Container>
-      
-      <Footer />
     </div>
   );
 };
