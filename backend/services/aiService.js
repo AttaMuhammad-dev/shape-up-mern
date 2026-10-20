@@ -49,7 +49,9 @@ export async function answerFitness({message, userData, history, signal, fetcher
   const deadline = Date.now() + 22000;
   let lastCode = 'API_UNAVAILABLE';
   try {
-    for (const model of models) {
+    const candidates=[...models];
+    for (let attempt=0;attempt<3&&attempt<candidates.length;attempt++) {
+      const model=candidates[attempt];
       if ((cooldown.get(model)||0) > Date.now()) continue;
       if (signal?.aborted) throw new AIServiceError('CANCELLED');
       const remaining = deadline - Date.now();
@@ -77,7 +79,7 @@ export async function answerFitness({message, userData, history, signal, fetcher
             lastCode = 'API_RATE_LIMITED'; continue;
           }
           if (status === 404) {cooldown.set(model,Date.now()+3600000);continue;}
-          if (status >= 500) {lastCode='API_UNAVAILABLE';await sleep(300+Math.floor(Math.random()*300),signal);continue;}
+          if (status >= 500) {lastCode='API_UNAVAILABLE';if(attempt===0)candidates.splice(1,0,model);await sleep(300+Math.floor(Math.random()*300),signal);continue;}
           throw new AIServiceError('API_UNAVAILABLE');
         }
         const candidate = data.candidates?.[0];

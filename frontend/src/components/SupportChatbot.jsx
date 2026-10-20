@@ -65,7 +65,7 @@ const SupportChatbot = () => {
 
     try {
       requestRef.current = new AbortController();
-      const history = messages.filter(m => m.id !== 1).slice(-6).map(m => ({role:m.sender === 'bot' ? 'model' : 'user',text:m.text}));
+      const history = messages.filter(m => m.id !== 1 && !m.failed && !messages.some(next=>next.failed&&next.retryText===m.text)).slice(-6).map(m => ({role:m.sender === 'bot' ? 'model' : 'user',text:m.text}));
       const { data } = await axios.post('/api/ai/chat', {
         message: text,
         history,
@@ -86,7 +86,7 @@ const SupportChatbot = () => {
         const errorMessage = error.response?.data?.reply || error.response?.data?.message || (error.code === 'ECONNABORTED' ? 'The AI service/API took too long to respond. Please try again.' : 'Could not reach the AI service/API. Check your connection and try again.');
         setMessages((prev) => [
             ...prev,
-            { id: Date.now() + 1, sender: "bot", text: errorMessage },
+            { id: Date.now() + 1, sender: "bot", text: errorMessage, failed:true, retryText:text },
         ]);
     }
     setIsLoading(false);
@@ -164,6 +164,7 @@ const SupportChatbot = () => {
               >
                 {msg.sender === "bot" && <SmartToyIcon fontSize="small" className="me-1 text-primary" />}
                 {msg.text}
+                {msg.failed&&<div className="mt-2"><Button size="sm" variant="outline-primary" disabled={isLoading} onClick={()=>handleSend(msg.retryText)}>Retry question</Button></div>}
               </div>
             </div>
           ))}

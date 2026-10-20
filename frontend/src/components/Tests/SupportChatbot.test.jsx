@@ -28,3 +28,12 @@ test('rapid Enter presses submit only one request',async()=>{
   fireEvent.keyDown(box,{key:'Enter'});fireEvent.keyDown(box,{key:'Enter'});expect(axios.post).toHaveBeenCalledTimes(1);
   await act(async()=>resolve({data:{reply:'A complete reply.'}}));expect(await screen.findByText('A complete reply.')).toBeInTheDocument();
 });
+test('retry excludes provider failure text from conversation context',async()=>{
+  axios.post.mockRejectedValueOnce({response:{data:{reply:'The AI service is temporarily unavailable.'}}}).mockResolvedValueOnce({data:{reply:'A complete retry response.'}});
+  mount();send('Suggest a short workout');
+  await screen.findByText('The AI service is temporarily unavailable.');
+  fireEvent.click(screen.getByRole('button',{name:'Retry question'}));
+  await screen.findByText('A complete retry response.');
+  expect(axios.post.mock.calls[1][1].history).toEqual([]);
+  expect(axios.post.mock.calls[1][1].message).toBe('Suggest a short workout');
+});

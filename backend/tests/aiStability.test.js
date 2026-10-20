@@ -20,6 +20,7 @@ test('retries a transient provider failure and caches only a complete answer',as
   const fetcher=async(url,options)=>{calls.push({url,options});return calls.length===1?Response.json({error:{status:'UNAVAILABLE'}},{status:503}):response();};
   const result=await answerFitness({message:'Suggest a beginner workout',fetcher});
   assert.equal(result.mode,'ai');assert.equal(calls.length,2);assert.ok(!calls[0].url.includes('test-only-key'));
+  assert.equal(calls[0].url,calls[1].url);
   assert.equal(calls[0].options.headers['x-goog-api-key'],'test-only-key');
   const cached=await answerFitness({message:'Suggest a beginner workout',fetcher});assert.equal(cached.cached,true);assert.equal(calls.length,2);
 });
