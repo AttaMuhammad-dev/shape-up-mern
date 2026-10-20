@@ -1,7 +1,7 @@
 import {localDay} from '../utils/reminders';
 import React, { useState, useMemo, useEffect, useRef } from "react";
 import {
-  Container, Card, Row, Col, Button, Modal, Form, ProgressBar, InputGroup, Badge
+  Container, Card, Row, Col, Button, Modal, Form, ProgressBar, InputGroup, Badge, Alert
 } from "react-bootstrap";
 import {
   BarChart, Bar, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area
@@ -98,8 +98,8 @@ const AchievementBadge = ({ icon, title, desc, unlocked, index }) => (
 // MAIN COMPONENT: DASHBOARD
 // ==========================================
 const Dashboard = () => {
-  const { data: workouts, isLoading: loadingWorkouts } = useGetWorkoutsQuery();
-  const { data: dailyLogs, isLoading: loadingLogs } = useGetDailyLogsQuery();
+  const { data: workouts, isLoading: loadingWorkouts, isError: workoutsError } = useGetWorkoutsQuery();
+  const { data: dailyLogs, isLoading: loadingLogs, isError: logsError } = useGetDailyLogsQuery();
   const [updateDailyLog, { isLoading: updatingLog }] = useUpdateDailyLogMutation();
   
   const { userInfo } = useSelector((state) => state.auth);
@@ -223,14 +223,11 @@ const Dashboard = () => {
     }
   };
 
-  const saveSteps = async (newSteps) => {
-    try {
-        await updateDailyLog({ date: todayDate, steps: newSteps }).unwrap();
-        toast.success("Steps Synced!");
-    } catch (err) { console.error("Step Sync Failed", err); }
-  };
+  const saveSteps = newSteps => updateDailyLog({date:todayDate,steps:newSteps}).unwrap();
 
   const generatePDF = async () => {
+    if(loadingLogs||logsError)return;
+    try{
     const [{jsPDF},{default:autoTable}]=await Promise.all([import("jspdf"),import("jspdf-autotable")]);
     const doc = new jsPDF();
     doc.text(`Shape Up Report - ${userInfo?.name}`, 14, 20);
@@ -241,6 +238,7 @@ const Dashboard = () => {
       theme: 'grid',
     });
     doc.save("ShapeUp_Progress.pdf");
+    }catch{toast.error('Report could not be generated. Please try again.');}
   };
 
   const getProgress = (val, goal) => Math.min((val / goal) * 100, 100);
@@ -345,7 +343,7 @@ const Dashboard = () => {
                 </p>
               </div>
               <div className="d-flex gap-3 mt-4 mt-lg-0">
-                  <Button variant="dark" onClick={generatePDF} className="btn-modern d-flex align-items-center shadow-sm hover-lift">
+                  <Button variant="dark" onClick={generatePDF} disabled={loadingLogs||logsError} className="btn-modern d-flex align-items-center shadow-sm hover-lift">
                     <FaFilePdf className="me-2 text-danger" /> Export Report
                   </Button>
                   <Button variant="primary" onClick={handleShow} className="btn-modern d-flex align-items-center shadow-lg btn-glow hover-lift">
@@ -355,7 +353,7 @@ const Dashboard = () => {
             </div>
         </Reveal>
 
-        {loadingWorkouts || loadingLogs ? <Loader /> : (
+        {loadingWorkouts || loadingLogs ? <Loader /> : logsError||workoutsError ? <Alert variant="warning">Your saved dashboard data could not be loaded. Refresh to retry; no data has been removed.</Alert> : (
           <>
              <Row className="mb-5 g-4">
                  <Col md={6} lg={3}>
