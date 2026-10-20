@@ -12,11 +12,15 @@ Requires Node.js 22 or newer and a dedicated MongoDB database containing demo da
 
 ## Vercel deployment
 
-For the current free portfolio launch, prefer the included `render.yaml`: it serves the React build and API together and lets Atlas allow only the service's outbound network ranges. Free Render services sleep when idle; local uploads are not durable. Use `MONGO_URI` with the dedicated `shape_up_demo` database and let Render generate `JWT_SECRET`. Keep AI and email disabled. The configured in-memory request limits apply to this single service instance and reset on restart; a shared store is needed before scaling across instances.
+The current portfolio demo uses free Vercel hosting. The included `render.yaml` is an alternative, not the active deployment route. Use `MONGO_URI` with the dedicated `shape_up_demo` database and a private random `JWT_SECRET`. In-memory limits, model cooldowns and caches apply per server instance and reset on restart; a shared store is needed for global limits across instances.
 
 Import the repository with the repository root as Root Directory. The root `vercel.json` installs both applications, builds the frontend, and sends `/api/*` to the backend in the same deployment. Do not select the legacy frontend-only or backend-only configuration.
 
-Set `NODE_ENV=production`, `MONGO_URI`, and `JWT_SECRET` in Vercel Environment Variables. Keep email disabled (`EMAIL_ENABLED=false`). Set `GEMINI_API_KEY` only on the server if enabling AI; never put it in a `REACT_APP_*` value. Configure a model supported by that key before presenting AI as working. No live AI call was validated during preparation.
+Set `NODE_ENV=production`, `MONGO_URI`, and `JWT_SECRET` in Vercel Environment Variables. Keep email disabled (`EMAIL_ENABLED=false`). Enable coaching with `AI_ENABLED=true` and a private server-only `GEMINI_API_KEY`; never use a `REACT_APP_*` value. Use a separate Google project from other demos to separate project-level quota. The public AI route is independent of the database and authentication configuration.
+
+The 20 October reliability update adds a bounded three-model ladder, per-call timeouts with a 22-second generation budget, cancellation, transient-error backoff, model cooldowns for rate limits, bounded complete-answer caching, a local greeting and explicit API failure messages. The chat keeps up to six bounded history turns, prevents duplicate submissions and times out client requests. Empty, blocked and truncated provider output is not presented as successful AI output. Models and API availability can change; retain periodic live checks.
+
+Profile saves preserve unchanged password hashes and use the backend's actual image field. The legacy water component reads the current signed-in day's server record, validates positive amounts and only displays saved updates. The previously simulated account-deletion action is disabled and labeled unavailable; it must not claim to delete records. Frontend regression tests cover API failure messages, follow-up context, duplicate sends and failed water saves. Production builds also pass with CI lint warnings treated as errors.
 
 Before sharing a demo link, verify registration, login, refresh, logout, saving a workout, nutrition/water logs, and a direct visit to `/dashboard` using a fresh browser session. `/api/health` tests the HTTP service; it does not establish that MongoDB is reachable.
 
@@ -24,4 +28,4 @@ Before sharing a demo link, verify registration, login, refresh, logout, saving 
 
 From the root: `npm run test:deployment` and `npm run build`.
 
-This is a portfolio project. Do not enter real health information. API and sign-in attempts have per-instance request limits. Add a shared limiter before scaling across instances. AI service/API access and email are unavailable in this demo. Repairing the older AI provider integration is deferred; enabling it later still requires provider timeouts and quota controls.
+This is a portfolio project. Do not enter real health information. API, AI and sign-in attempts have per-instance request limits. Add a shared limiter before scaling across instances. Email remains disabled; AI depends on the external provider's availability and quota, with no uninterrupted-service guarantee. Live coaching with the supplied separate key was confirmed on 20 October 2026; see the saved release evidence for the exact tested scope.

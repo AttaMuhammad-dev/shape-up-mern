@@ -17,7 +17,7 @@ test('health, authentication and disabled email work without a database connecti
     assert.equal(response.status, 503);
     assert.match((await response.json()).message, /disabled/);
     const aiResponse = await fetch(`${base}/api/ai/chat`, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message: 'Hello' }),
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message: 'Suggest a beginner strength workout' }),
     });
     assert.equal(aiResponse.status, 503);
     assert.match((await aiResponse.json()).reply, /unavailable/);

@@ -3,13 +3,12 @@ import { Container, Row, Col, Form, Button, Alert, Nav, Badge, Modal, Image, Inp
 import { useDispatch, useSelector } from "react-redux";
 import { toast } from "react-toastify";
 import Loader from "../components/Loader";
-import { useNavigate } from "react-router-dom"; // Need this for redirect after delete
-import { useUpdateUserProfileMutation, useDeleteUserMutation } from "../slices/usersApiSlice"; // Import delete mutation (assuming it exists or mocking it)
-import { setCredentials, logout } from "../slices/authSlice"; // Import logout
+import { useUpdateUserProfileMutation } from "../slices/usersApiSlice";
+import { setCredentials } from "../slices/authSlice";
 import { 
   FaUser, FaLock, FaDumbbell, FaRulerVertical, FaWeight, 
   FaVenusMars, FaBirthdayCake, FaCamera, FaSave, FaCheckCircle,
-  FaChartLine, FaDownload, FaTrashAlt, FaExclamationTriangle
+  FaChartLine, FaDownload, FaExclamationTriangle
 } from "react-icons/fa";
 
 // ==========================================
@@ -86,7 +85,6 @@ const BMICard = ({ bmi, status, color }) => (
 // ==========================================
 const Profile = () => {
   const dispatch = useDispatch();
-  const navigate = useNavigate();
   const { userInfo } = useSelector((state) => state.auth);
   
   const [updateProfile, { isLoading }] = useUpdateUserProfileMutation();
@@ -109,7 +107,7 @@ const Profile = () => {
   const [weight, setWeight] = useState("");
   const [gender, setGender] = useState("Male");
   const [goal, setGoal] = useState("Maintain");
-  const [activityLevel, setActivityLevel] = useState("Moderate"); // Keeping state but not using in update yet based on your snippet
+  const [activityLevel] = useState("Moderate");
 
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
@@ -124,7 +122,7 @@ const Profile = () => {
         setGender(userInfo.gender || "Male");
         setGoal(userInfo.goal || "Maintain");
         // Fallback if avatar is missing
-        setAvatar(userInfo.avatar && userInfo.avatar.length > 20 ? userInfo.avatar : `https://ui-avatars.com/api/?name=${userInfo.name}&background=0D8ABC&color=fff`);
+        setAvatar(userInfo.image && userInfo.image.length > 20 ? userInfo.image : `https://ui-avatars.com/api/?name=${encodeURIComponent(userInfo.name || 'Demo')}&background=0D8ABC&color=fff`);
     }
   }, [userInfo]);
 
@@ -164,7 +162,7 @@ const Profile = () => {
           _id: userInfo._id,
           name,
           email,
-          avatar,
+          image: avatar,
           age: Number(age),
           height: Number(height),
           weight: Number(weight),
@@ -231,9 +229,8 @@ const Profile = () => {
           // Simulating deletion for now if API hook is missing in your import
           // REPLACE with actual API call: await deleteUserMutation(userInfo._id).unwrap();
           
-          dispatch(logout());
-          navigate('/login'); // or home
-          toast.success("Account Deleted.");
+          toast.info("Account deletion is unavailable in this portfolio demo. No data has been deleted.");
+          setShowDeleteModal(false);
       } catch (err) {
           toast.error(err?.data?.message || "Delete failed");
           setShowDeleteModal(false);
@@ -585,10 +582,10 @@ const Profile = () => {
                                 <div className="d-flex justify-content-between align-items-center">
                                     <div>
                                         <h6 className="fw-bold text-danger mb-1">Delete Account</h6>
-                                        <p className="small text-muted mb-0">Permanently remove your account and all associated data. This cannot be undone.</p>
+                                        <p className="small text-muted mb-0">Account deletion is not available in this portfolio demo. Use sample details only.</p>
                                     </div>
-                                    <Button variant="danger" className="fw-bold" onClick={() => setShowDeleteModal(true)}>
-                                        Delete
+                                    <Button variant="secondary" className="fw-bold" disabled>
+                                        Unavailable in demo
                                     </Button>
                                 </div>
                             </div>

@@ -3,9 +3,9 @@ import { Container, Row, Col, Button, Badge, Accordion, Card, Nav, Form, Alert }
 import { Link } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { 
-  FaArrowRight, FaCheckCircle, 
+  FaCheckCircle,
   FaQuoteRight, FaPlay, FaStar, 
-  FaApple, FaGooglePlay, FaUserCircle, FaQuoteLeft
+  FaApple, FaGooglePlay, FaQuoteLeft
 } from "react-icons/fa";
 // Footer import hata diya hai kyunki use nahi karna
 // import Footer from "../components/Footer"; 

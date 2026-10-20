@@ -22,26 +22,33 @@ const SupportChatbot = () => {
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef(null);
+  const chatBodyRef = useRef(null);
+  const sendLock = useRef(false);
+  const requestRef = useRef(null);
 
   const { userInfo } = useSelector((state) => state.auth || {});
 
   useEffect(() => {
     if (isOpen) {
-      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+      const body = chatBodyRef.current;
+      const last = body?.querySelector('[data-chat-message]:last-of-type');
+      if (body && last) body.scrollTop = last.offsetTop - body.offsetTop - 8;
     }
   }, [messages, isLoading, isOpen]);
+  useEffect(() => () => requestRef.current?.abort(), []);
 
   const predefinedQA = {
     "How to log food? 🍎": "Open Nutrition Checker, search food, and click Add. Calories are tracked automatically.",
-    "Calculate BMR? 🔢": "Go to the BMR page, enter age, height, and weight to calculate daily calories.",
-    "Dark Mode Setup 🌙": "Go to Settings and change App Theme to Dark Mode.",
+    "Calculate BMR? 🔢": "Open the BMR page and enter your details to estimate your basal metabolic rate and activity-adjusted calorie needs.",
+    "Dark Mode Setup 🌙": "Use the moon/sun button in the navigation bar to switch between light and dark mode.",
     "Is this Free? 💸": "Yes! Shape Up v1.0 is completely free.",
   };
 
   const quickQuestions = Object.keys(predefinedQA);
 
   const handleSend = async (text = input) => {
-    if (!text.trim()) return;
+    if (sendLock.current || !text.trim() || text.length > 2000) return;
+    sendLock.current = true;
 
     setMessages((prev) => [...prev, { id: Date.now(), sender: "user", text }]);
     setInput("");
@@ -54,38 +61,46 @@ const SupportChatbot = () => {
           { id: Date.now() + 1, sender: "bot", text: predefinedQA[text] },
         ]);
         setIsLoading(false);
+        sendLock.current = false;
       }, 500);
       return;
     }
 
     try {
-      const { data } = await axios.post('/api/ai/chat', { 
+      requestRef.current = new AbortController();
+      const history = messages.filter(m => m.id !== 1).slice(-6).map(m => ({role:m.sender === 'bot' ? 'model' : 'user',text:m.text}));
+      const { data } = await axios.post('/api/ai/chat', {
         message: text,
+        history,
         userData: {
             name: userInfo?.name || "Friend",
             goal: userInfo?.goal || "General Fitness",
             weight: userInfo?.weight || "Unknown"
         }
-      });
+      }, {timeout:26000,signal:requestRef.current.signal});
+      if (typeof data.reply !== 'string' || !data.reply.trim()) throw new Error('Empty API response');
       
       setMessages((prev) => [
         ...prev,
         { id: Date.now() + 1, sender: "bot", text: data.reply },
       ]);
     } catch (error) {
-        const errorMessage = error.response?.data?.reply || "⚠️ Connection Error.";
+        if (axios.isCancel(error)) {setIsLoading(false);sendLock.current=false;return;}
+        const errorMessage = error.response?.data?.reply || error.response?.data?.message || (error.code === 'ECONNABORTED' ? 'The AI service/API took too long to respond. Please try again.' : 'Could not reach the AI service/API. Check your connection and try again.');
         setMessages((prev) => [
             ...prev,
             { id: Date.now() + 1, sender: "bot", text: errorMessage },
         ]);
     }
     setIsLoading(false);
+    sendLock.current = false;
   };
 
   // 👇 Floating Button Style (When Closed)
   if (!isOpen) {
     return (
       <Button 
+        aria-label="Open Shape Up AI chat"
         onClick={() => setIsOpen(true)}
         className="rounded-circle shadow-lg d-flex align-items-center justify-content-center"
         style={{
@@ -125,6 +140,7 @@ const SupportChatbot = () => {
             <AutoAwesomeIcon /> Shape Up AI
           </div>
           <Button 
+            aria-label="Close Shape Up AI chat"
             variant="link" 
             className="text-white p-0" 
             onClick={() => setIsOpen(false)}
@@ -133,10 +149,11 @@ const SupportChatbot = () => {
           </Button>
         </Card.Header>
 
-        <Card.Body className="flex-grow-1 overflow-auto bg-light">
+        <Card.Body ref={chatBodyRef} role="log" aria-label="Shape Up AI conversation" aria-live="polite" aria-busy={isLoading} className="flex-grow-1 overflow-auto bg-light" style={{overflowAnchor:'none'}}>
           {messages.map((msg) => (
             <div
               key={msg.id}
+              data-chat-message
               className={`d-flex ${
                 msg.sender === "user" ? "justify-content-end" : "justify-content-start"
               } mb-2`}
@@ -180,11 +197,13 @@ const SupportChatbot = () => {
           <InputGroup>
             <Form.Control
               placeholder="Ask anything..."
+              aria-label="Ask Shape Up AI"
+              maxLength={2000}
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleSend()}
+              onKeyDown={(e) => {if(e.key === 'Enter' && !e.nativeEvent.isComposing) {e.preventDefault();handleSend();}}}
             />
-            <Button onClick={() => handleSend()} disabled={isLoading} variant="primary">
+            <Button aria-label="Send message to Shape Up AI" onClick={() => handleSend()} disabled={isLoading || !input.trim()} variant="primary">
               <SendIcon />
             </Button>
           </InputGroup>

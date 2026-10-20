@@ -1,136 +1,27 @@
-import asyncHandler from "express-async-handler";
-import dns from "node:dns";
+import {answerFitness,AIServiceError} from '../services/aiService.js';
 
-// Windows / Node IPv6 connection drop fix
-dns.setDefaultResultOrder("ipv4first");
-
-let cachedModel = null;
-
-// Dynamic model discovery for your API key
-async function getAvailableModel(apiKey) {
-  if (cachedModel) return cachedModel;
-
+const replies = {
+  BAD_REQUEST:'Please enter a message between 1 and 2000 characters.',
+  NOT_CONFIGURED:'AI service/API is unavailable because it is not configured yet. You can still use the workout, nutrition and BMR tools.',
+  API_CONFIGURATION:'The AI service/API needs a configuration update. Please use the workout and calculator tools meanwhile.',
+  API_RATE_LIMITED:'The AI service/API is at its usage limit. Please try again shortly; the other fitness tools remain available.',
+  BUSY:'The AI service is helping several people. Please try again in a few seconds.',
+  BLOCKED:'I couldn’t answer that request. Try a question about general fitness or using Shape Up.',
+  API_TIMEOUT:'The AI service/API took too long to respond. Please try again; your other fitness tools remain available.',
+};
+export async function chatWithAI(req,res) {
+  const ac = new AbortController();
+  const stop = () => ac.abort();
+  req.once('aborted',stop);res.once('close',stop);
+  res.set('Cache-Control','no-store');
   try {
-    const listRes = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`
-    );
-    const listData = await listRes.json();
-
-    if (listData.models && Array.isArray(listData.models)) {
-      // Find an active model supporting generateContent (prioritizing 2.0-flash, flash, then any gemini)
-      const validModel = listData.models.find(
-        (m) =>
-          m.supportedGenerationMethods?.includes("generateContent") &&
-          (m.name.includes("2.0-flash") || m.name.includes("flash") || m.name.includes("gemini"))
-      );
-
-      if (validModel) {
-        cachedModel = validModel.name;
-        return cachedModel;
-      }
-    }
-  } catch (err) {
-    console.warn("⚠️ ListModels check skipped:", err.message);
-  }
-
-  // Safe fallback for v1beta
-  cachedModel = "models/gemini-2.0-flash";
-  return cachedModel;
-}
-
-const chatWithAI = asyncHandler(async (req, res) => {
-  const { message, userData } = req.body;
-
-  if (process.env.AI_ENABLED !== 'true') {
-    return res.status(503).json({ reply: 'AI service/API unavailable in this demo. The external AI API is not currently configured. Please try the workout and calculator tools.' });
-  }
-  if (typeof message !== 'string' || !message.trim() || message.length > 2000) {
-    return res.status(400).json({ reply: 'Please enter a message between 1 and 2000 characters.' });
-  }
-
-  // 1. Load & sanitize key
-  const API_KEY = process.env.GEMINI_API_KEY ? process.env.GEMINI_API_KEY.trim() : null;
-
-  if (!API_KEY) {
-    console.error("❌ CRITICAL: GEMINI_API_KEY is missing.");
-    return res.status(503).json({ reply: 'AI coaching is temporarily unavailable.' });
-  }
-
-  // 2. Prepare Context
-  const name = userData?.name || "Athlete";
-  const goal = userData?.goal || "General Fitness";
-  const weight = userData?.weight ? `${userData.weight}kg` : "unknown weight";
-
-  const systemInstruction = `
-    ROLE:
-    You are "Shape Up AI", a world-class personal trainer embedded in the Shape Up app.
-    You are talking to **${name}**.
-    Their goal is **${goal}**.
-    Their weight is **${weight}**.
-
-    APP FEATURES:
-    - Nutrition Checker, BMR Calculator, Workout Database, Dashboard.
-
-    RULES:
-    1. Be Personalized.
-    2. Tone: High energy, professional 🏋️‍♂️🥗.
-    3. Brevity: Short answers (max 3 sentences).
-    4. Safety: Medical issues -> See a doctor.
-
-    USER SAYS: "${message}"
-  `;
-
-  try {
-    // 3. Resolve active model dynamically
-    let modelName = await getAvailableModel(API_KEY);
-    const cleanModel = modelName.startsWith("models/") ? modelName : `models/${modelName}`;
-    console.log(`🧠 AI Selected Model: ${cleanModel}`);
-
-    // 4. Generate Content
-    let response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/${cleanModel}:generateContent?key=${API_KEY}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: systemInstruction }] }],
-        }),
-      }
-    );
-
-    let data = await response.json();
-
-    // 5. Retry fallback with gemini-2.0-flash if the primary model returned 404
-    if (!response.ok && response.status === 404 && cleanModel !== "models/gemini-2.0-flash") {
-      console.log("Retrying with models/gemini-2.0-flash...");
-      cachedModel = "models/gemini-2.0-flash";
-      response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${API_KEY}`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: systemInstruction }] }],
-          }),
-        }
-      );
-      data = await response.json();
-    }
-
-    if (!response.ok) {
-      cachedModel = null;
-      console.error("Google API Error:", JSON.stringify(data));
-      throw new Error(data.error?.message || "Google API Error");
-    }
-
-    const botReply =
-      data.candidates?.[0]?.content?.parts?.[0]?.text || "Let's work out! 💪";
-
-    res.json({ reply: botReply });
+    const value = await answerFitness({...req.body,signal:ac.signal});
+    if (!ac.signal.aborted) res.json(value);
   } catch (error) {
-    console.error("❌ AI Controller Error:", error.message);
-    res.status(500).json({ reply: "My brain is buffering 🧠. Please try again!" });
-  }
-});
-
-export { chatWithAI };
+    if (ac.signal.aborted || error?.code === 'CANCELLED') return;
+    const known = error instanceof AIServiceError;
+    const code = known ? error.code : 'API_UNAVAILABLE';
+    if (known && error.retryAfter) res.set('Retry-After',String(error.retryAfter));
+    res.status(known?error.status:503).json({code,reply:replies[code] || 'The AI service/API is temporarily unavailable. Please try again shortly; the workout and calculator tools remain available.'});
+  } finally {req.removeListener('aborted',stop);res.removeListener('close',stop);}
+}

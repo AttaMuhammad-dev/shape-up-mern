@@ -1,38 +1,26 @@
-import React from "react";
-import { render, fireEvent } from "@testing-library/react";
-import "@testing-library/jest-dom/extend-expect";
-import WaterIntakeLog from "../WaterIntakeLog";
-
-test("renders WaterIntakeLog", () => {
-  const { getByText, getByLabelText } = render(<WaterIntakeLog />);
-
-  // check if the component renders the initial state correctly
-  expect(
-    getByText("Water to be consumed for today: 4 litres")
-  ).toBeInTheDocument();
-
-  // check if the form field is rendered
-  const inputField = getByLabelText(/log water consumed/i);
-  expect(inputField).toBeInTheDocument();
-  expect(inputField.value).toBe("0");
+import React from 'react';
+import {render,fireEvent,screen,waitFor} from '@testing-library/react';
+import '@testing-library/jest-dom';
+import WaterIntake from '../WaterIntake';
+const mockUpdate=jest.fn();
+jest.mock('../../slices/usersApiSlice',()=>({useUpdateWaterIntakeMutation:()=>[mockUpdate,{isLoading:false}]}));
+beforeEach(()=>{jest.clearAllMocks();global.fetch=jest.fn(async()=>({ok:true,json:async()=>({litersDrank:1.5})}));});
+test('loads today’s signed-in water amount instead of stale local data',async()=>{
+  localStorage.setItem('waterIntake','{broken');render(<WaterIntake/>);
+  expect(await screen.findByText('Water logged today: 1.5 litres')).toBeInTheDocument();
+  expect(screen.getByLabelText(/log water consumed/i)).toHaveValue(0);
 });
-
-test("log water intake", () => {
-  const { getByText, getByLabelText, getByRole } = render(<WaterIntakeLog />);
-  const inputField = getByLabelText(/log water consumed/i);
-  const logButton = getByRole("button");
-
-  // simulate typing 2 litres into the input field
-  fireEvent.change(inputField, { target: { value: "2" } });
-  expect(inputField.value).toBe("2");
-
-  // simulate clicking the Log button
-  fireEvent.click(logButton);
-
-  // check if the total water to be consumed is updated correctly
-  expect(
-    getByText("Water to be consumed for today: 2 litres")
-  ).toBeInTheDocument();
-  // check if the input field is reset to 0
-  expect(inputField.value).toBe("0");
+test('adds water only after the server saves it and resets the entry',async()=>{
+  mockUpdate.mockReturnValue({unwrap:async()=>({litersDrank:3.5})});render(<WaterIntake/>);
+  await screen.findByText('Water logged today: 1.5 litres');
+  fireEvent.change(screen.getByLabelText(/log water consumed/i),{target:{value:'2'}});fireEvent.click(screen.getByRole('button',{name:'Add'}));
+  await waitFor(()=>expect(mockUpdate).toHaveBeenCalledWith({litersDrank:3.5}));
+  expect(await screen.findByText('Water logged today: 3.5 litres')).toBeInTheDocument();
+  expect(screen.getByLabelText(/log water consumed/i)).toHaveValue(0);
+});
+test('a rejected save does not display an unsaved amount',async()=>{
+  mockUpdate.mockReturnValue({unwrap:async()=>{throw new Error('API unavailable');}});render(<WaterIntake/>);
+  await screen.findByText('Water logged today: 1.5 litres');
+  fireEvent.change(screen.getByLabelText(/log water consumed/i),{target:{value:'2'}});fireEvent.click(screen.getByRole('button',{name:'Add'}));
+  await waitFor(()=>expect(mockUpdate).toHaveBeenCalled());expect(screen.getByText('Water logged today: 1.5 litres')).toBeInTheDocument();
 });

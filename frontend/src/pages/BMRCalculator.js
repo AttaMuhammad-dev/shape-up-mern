@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { 
   Container, Row, Col, Form, Button, 
-  Badge, InputGroup, OverlayTrigger, Tooltip
+  Badge, InputGroup
 } from "react-bootstrap";
 import { useSelector } from "react-redux"; 
 import { 
-  FaCalculator, FaUndo, FaWeight, FaRulerVertical,
-  FaDna, FaInfoCircle, FaAppleAlt, FaMale, FaFemale
+  FaCalculator, FaUndo, FaAppleAlt, FaMale, FaFemale
 } from "react-icons/fa";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, Legend } from "recharts";
 // Footer removed
@@ -73,8 +72,8 @@ const BMRCalculator = () => {
   const [height, setHeight] = useState(175);
   const [age, setAge] = useState(25);
   const [activityIndex, setActivityIndex] = useState(2); // Default: Moderately Active (Index 2)
-  const [bodyFat, setBodyFat] = useState(15);
-  const [formula, setFormula] = useState("mifflin");
+  const [bodyFat] = useState(15);
+  const [formula] = useState("mifflin");
   const [goal, setGoal] = useState("maintain");
   
   // Results State

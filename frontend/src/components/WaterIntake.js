@@ -5,55 +5,47 @@ import { useUpdateWaterIntakeMutation } from "../slices/usersApiSlice";
 import { Box } from "@mui/material";
 
 const WaterIntakeLog = () => {
-  const [currentDate, setCurrentDate] = useState(
+  const [currentDate] = useState(
     new Date().toISOString().split("T")[0]
   );
 
   const [totalWater, setTotalWater] = useState(0);
   const [loggedWater, setLoggedWater] = useState(0);
 
-  const [updateWaterIntake] = useUpdateWaterIntakeMutation();
+  const [updateWaterIntake, {isLoading: saving}] = useUpdateWaterIntakeMutation();
 
   useEffect(() => {
+    const controller = new AbortController();
+    let mounted = true;
+    const timer = setTimeout(() => controller.abort(), 10000);
     const fetchWaterIntake = async () => {
       try {
-        const response = await fetch(`/api/users/water-intake/${currentDate}`);
+        const response = await fetch(`/api/users/water-intake/${currentDate}`,{signal:controller.signal});
+        if (!response.ok) throw new Error('Water log unavailable');
         const data = await response.json();
-
-        setTotalWater(data.litersDrank);
-
-        const waterIntakeData = JSON.stringify(data);
-        localStorage.setItem("waterIntake", waterIntakeData);
+        if (mounted) setTotalWater(Number(data.litersDrank) || 0);
       } catch (error) {
-        console.error("Fetch water intake error:", error);
-      }
+        if (mounted) toast.error('Could not load today’s water log. Please try again.');
+      } finally {clearTimeout(timer);}
     };
-
-    // Load the water intake from local storage
-    const storedWaterIntake = localStorage.getItem("waterIntake");
-    if (storedWaterIntake) {
-      const parsedWaterIntake = JSON.parse(storedWaterIntake);
-      setTotalWater(parsedWaterIntake.litersDrank);
-    } else {
-      fetchWaterIntake();
-    }
-  }, []);
+    // Always load the signed-in user's current day; no cross-user/date cache.
+    fetchWaterIntake();
+    return () => {mounted=false;clearTimeout(timer);controller.abort();};
+  }, [currentDate]);
 
   const handleChange = (event) => {
     const { value } = event.target;
-    setLoggedWater(parseFloat(value));
+    setLoggedWater(value === '' ? '' : Number(value));
   };
 
   const handleSubmit = async (event) => {
     event.preventDefault();
 
+    if (!Number.isFinite(loggedWater) || loggedWater <= 0) {toast.error('Enter a positive amount of water.');return;}
     try {
       const waterIntakeData = {
         litersDrank: totalWater + loggedWater,
       };
-
-      // Save the water intake to local storage
-      localStorage.setItem("waterIntake", JSON.stringify(waterIntakeData));
 
       const updatedWaterIntake = await updateWaterIntake(
         waterIntakeData
@@ -82,7 +74,7 @@ const WaterIntakeLog = () => {
       >
         <div className="water-intake-log">
           <h2 className="water-intake-log__total">
-            Water to be consumed for today: {totalWater} litres
+            Water logged today: {totalWater} litres
           </h2>
           <Form onSubmit={handleSubmit} className="water-intake-log__form">
             <Form.Label
@@ -91,6 +83,7 @@ const WaterIntakeLog = () => {
             >
               Log water consumed (in litres):
               <Form.Control
+                id="totalWater"
                 type="number"
                 min="0"
                 step="0.05"
@@ -99,7 +92,7 @@ const WaterIntakeLog = () => {
                 className="water-intake-log__input"
               />
             </Form.Label>
-            <Button type="submit" className="water-intake-log__button mx-2">
+            <Button type="submit" disabled={saving} className="water-intake-log__button mx-2">
               Add
             </Button>
           </Form>

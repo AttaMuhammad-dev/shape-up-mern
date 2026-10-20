@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useMemo } from "react";
 import {
   Container,
   Row,
@@ -163,7 +163,7 @@ const NutritionChecker = () => {
     ? dailyLogs.find((log) => log.date === selectedDate) 
     : null;
 
-  const currentFoodItems = currentLog?.foods || []; 
+  const currentFoodItems = useMemo(() => currentLog?.foods || [], [currentLog]);
   
   const totalStats = currentFoodItems.reduce((acc, item) => ({
       calories: acc.calories + (Number(item.calories) || 0),

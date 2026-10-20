@@ -2,7 +2,8 @@ import app from '../backend/app.js';
 import connectDB from '../backend/config/db.js';
 
 export default async function handler(req, res) {
-  if (req.url.split('?')[0] !== '/api/health') {
+  // Public coaching and health are independent of MongoDB/auth availability.
+  if (!['/api/health','/api/ai/chat'].includes(req.url.split('?')[0])) {
     try {
       if (!process.env.JWT_SECRET) throw new Error('Missing authentication configuration');
       await connectDB();

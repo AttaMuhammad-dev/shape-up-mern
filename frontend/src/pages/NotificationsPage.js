@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { Container, Row, Col, Form, Button, Badge, Modal, Card, Tab, Nav } from "react-bootstrap";
+import { Container, Row, Col, Form, Button, Badge, Modal, Tab, Nav } from "react-bootstrap";
 import { toast } from "react-toastify";
 import { useGetRemindersQuery, useCreateReminderMutation, useDeleteReminderMutation } from "../slices/reminderSlice";
 import Loader from "../components/Loader";
 import { 
   FaBell, FaTrashAlt, FaRunning, FaUtensils, FaTint, 
-  FaPlusCircle, FaVolumeUp, FaClock, FaCalendarAlt, 
-  FaCheckCircle, FaExclamationCircle, FaPlay, FaStop, FaMusic 
+  FaPlusCircle, FaVolumeUp, FaCalendarAlt,
+  FaCheckCircle, FaPlay, FaStop, FaMusic
 } from "react-icons/fa";
 
 // ==========================================

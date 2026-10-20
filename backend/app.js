@@ -50,7 +50,8 @@ const authLimiter = rateLimit({
 });
 app.post(['/api/users', '/api/users/auth'], authLimiter);
 
-app.get('/api/health', (req, res) => res.json({ status: 'ok', databaseConfigured: Boolean(process.env.MONGO_URI) }));
+app.get('/api/health', (req, res) => {res.set('Cache-Control','no-store');res.json({ status: 'ok', version:'ai-stability-20261020', databaseConfigured: Boolean(process.env.MONGO_URI), aiConfigured: process.env.AI_ENABLED === 'true' && Boolean(process.env.GEMINI_API_KEY?.trim()), emailEnabled:process.env.EMAIL_ENABLED === 'true' });});
+app.use('/api/ai',rateLimit({windowMs:60_000,limit:20,standardHeaders:'draft-8',legacyHeaders:false,message:{code:'RATE_LIMITED',reply:'Please wait a minute before asking the AI again. The other fitness tools remain available.'}}));
 
 // Mount Routes
 app.use("/api/users", userRoutes);
