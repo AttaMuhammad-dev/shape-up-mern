@@ -1,6 +1,6 @@
 import { render, fireEvent, screen } from "@testing-library/react";
 import CalorieCalculator from "../CalorieCalculator";
-import "@testing-library/jest-dom";
+
 
 describe("CalorieCalculator", () => {
   test("calculates calories correctly", () => {

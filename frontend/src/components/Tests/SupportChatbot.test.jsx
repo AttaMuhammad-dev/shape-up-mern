@@ -1,14 +1,15 @@
+import {vi} from 'vitest';
 import React from 'react';
 import {render,screen,fireEvent,waitFor,act} from '@testing-library/react';
-import '@testing-library/jest-dom';
+
 import {Provider} from 'react-redux';
 import configureMockStore from 'redux-mock-store';
 import axios from 'axios';
 import SupportChatbot from '../SupportChatbot';
-jest.mock('axios',()=>({post:jest.fn(),isCancel:()=>false}));
+vi.mock('axios',()=>({default:{post:vi.fn(),isCancel:()=>false}}));
 const mount=()=>{render(<Provider store={configureMockStore()({auth:{userInfo:null}})}><SupportChatbot/></Provider>);fireEvent.click(screen.getByRole('button',{name:'Open Shape Up AI chat'}));};
 const send=text=>{fireEvent.change(screen.getByRole('textbox',{name:'Ask Shape Up AI'}),{target:{value:text}});fireEvent.click(screen.getByRole('button',{name:'Send message to Shape Up AI'}));};
-beforeEach(()=>jest.clearAllMocks());
+beforeEach(()=>vi.clearAllMocks());
 test('passes previous turns as bounded follow-up context',async()=>{
   axios.post.mockResolvedValue({data:{reply:'Try wall push-ups.'}});mount();send('Suggest a beginner workout');
   await screen.findByText('Try wall push-ups.');send('How many repetitions?');

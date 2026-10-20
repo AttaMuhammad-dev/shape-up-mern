@@ -1,3 +1,4 @@
+import {localDay} from '../utils/reminders';
 import React, { useState, useEffect } from "react";
 import { Form, Button } from "react-bootstrap";
 import { toast } from "react-toastify";
@@ -6,7 +7,7 @@ import { Box } from "@mui/material";
 
 const WaterIntakeLog = () => {
   const [currentDate] = useState(
-    new Date().toISOString().split("T")[0]
+    localDay()
   );
 
   const [totalWater, setTotalWater] = useState(0);

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useContext, useRef } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Container, Navbar, Nav, NavDropdown } from "react-bootstrap";
 import { useSelector, useDispatch } from "react-redux";
@@ -6,6 +6,8 @@ import { useLogoutMutation } from "../slices/usersApiSlice";
 import { logout } from "../slices/authSlice";
 import { toast } from "react-toastify";
 
+import {ThemeContext} from '../context/ThemeContext';
+import {dueReminders,localDay} from '../utils/reminders';
 // Icons
 import MenuIcon from "@mui/icons-material/Menu";
 import CloseIcon from "@mui/icons-material/Close";
@@ -22,36 +24,13 @@ const Header = () => {
   const { userInfo } = useSelector((state) => state.auth);
 
   // --- 0. DARK MODE LOGIC (ADDED THIS FIX) ---
-  const [darkMode, setDarkMode] = useState(false);
-
-  useEffect(() => {
-    // Check local storage or system preference on mount
-    const savedTheme = localStorage.getItem("theme");
-    if (savedTheme === "dark") {
-      setDarkMode(true);
-      document.body.classList.add("dark-mode");
-    } else {
-      setDarkMode(false);
-      document.body.classList.remove("dark-mode");
-    }
-  }, []);
-
-  const toggleTheme = () => {
-    if (darkMode) {
-      document.body.classList.remove("dark-mode");
-      localStorage.setItem("theme", "light");
-      setDarkMode(false);
-    } else {
-      document.body.classList.add("dark-mode");
-      localStorage.setItem("theme", "dark");
-      setDarkMode(true);
-    }
-  };
-
+  const {theme,toggleTheme}=useContext(ThemeContext);
+  const darkMode=theme==='dark';
+  const seenReminders=useRef(new Set());
   // --- 1. DAILY TARGET NOTIFICATION LOGIC ---
   useEffect(() => {
     if (userInfo) {
-      const today = new Date().toISOString().split("T")[0];
+      const today = localDay();
       const lastNotifiedDate = localStorage.getItem("lastDailyGoalNotification");
 
       if (lastNotifiedDate !== today) {
@@ -85,17 +64,11 @@ const Header = () => {
 
   useEffect(() => {
     const checkReminders = () => {
-      if (!reminders || reminders.length === 0) return;
+      if (!reminders || reminders.length === 0 || localStorage.getItem("shape-reminders-enabled")==="false") return;
       const now = new Date();
-      const currentTimeString = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
-      const currentSeconds = now.getSeconds();
-
-      if (currentSeconds > 2) return; 
-
-      reminders.forEach((reminder) => {
-        if (reminder.time === currentTimeString) {
-          const audio = new Audio(NOTIFICATION_SOUND);
-          audio.play().catch(() => {});
+      dueReminders(reminders,now,seenReminders.current).forEach((reminder) => {
+        {
+          if(localStorage.getItem("shape-reminder-sound")!=="false"){const audio = new Audio(NOTIFICATION_SOUND);audio.play().catch(() => {});}
           
           toast.info(`🔔 It's time: ${reminder.title}`, {
             position: "top-center",
@@ -110,11 +83,10 @@ const Header = () => {
       });
     };
 
-    if ("Notification" in window && Notification.permission !== "granted") {
-        Notification.requestPermission();
-    }
 
-    const interval = setInterval(checkReminders, 1000);
+
+    checkReminders();
+    const interval = setInterval(checkReminders, 15000);
     return () => clearInterval(interval);
   }, [reminders]);
   

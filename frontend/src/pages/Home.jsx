@@ -315,22 +315,7 @@ const Home = () => {
             </Reveal>
 
             <Reveal animation="fade-up" delay={600}>
-                <div className="d-flex justify-content-center gap-3">
-                   {userInfo ? (
-                      <Button as={Link} to="/dashboard" className="btn-glow hover-scale">
-                          Launch Dashboard
-                      </Button>
-                   ) : (
-                      <>
-                          <Button as={Link} to="/pages/register" className="btn-glow hover-scale">
-                             Start Free Trial
-                          </Button>
-                          <Button as={Link} to="/pages/login" variant="outline-secondary" className="px-4 py-3 rounded-pill fw-bold border-2 d-flex align-items-center hover-scale bg-white text-dark shadow-sm">
-                             <FaPlay className="me-2 text-primary" size={12}/> Member Login
-                          </Button>
-                      </>
-                   )}
-                </div>
+                <div className="d-flex justify-content-center gap-3"><Button as={Link} to="/pages/features" variant="light">Explore in your browser</Button></div>
             </Reveal>
 
             {/* 3D Visual Interface */}
@@ -510,25 +495,7 @@ const Home = () => {
       {/* ==========================================
           4. PRICING PLANS
          ========================================== */}
-      <section className="py-5 bg-opacity-10" style={{backgroundColor: "rgba(13, 110, 253, 0.03)"}}>
-         <Container>
-            <Reveal animation="fade-up">
-                <div className="text-center mb-5">
-                   <h2 className="fw-bold">Choose Your Plan</h2>
-                   <p className="text-muted">No hidden fees. Cancel anytime.</p>
-                </div>
-            </Reveal>
-
-            <Row className="g-4 justify-content-center align-items-center">
-                <Col lg={4} md={6}>
-                    <PricingCard title="Free Starter" price="0" color="secondary" features={[{text: "Basic Calorie Tracking", included: true}, {text: "Access to 50 Workouts", included: true}, {text: "Community Support", included: true}, {text: "Advanced Analytics", included: false}, {text: "Custom Meal Plans", included: false}]} delay={0} />
-                </Col>
-                <Col lg={4} md={6}>
-                    <PricingCard title="Pro Athlete" price="9.99" isPro={true} color="primary" features={[{text: "Unlimited Calorie Tracking", included: true}, {text: "Full 500+ Exercise Library", included: true}, {text: "Priority Support", included: true}, {text: "Advanced Analytics", included: true}, {text: "AI Meal Generator", included: true}]} delay={200} />
-                </Col>
-            </Row>
-         </Container>
-      </section>
+      <section className="py-5"><Container className="text-center"><h2 className="fw-bold">Free to explore</h2><p>All implemented features are free. No payment or subscription is required. Use sample details in this student portfolio project.</p><Button as={Link} to="/pages/features">Explore the features</Button></Container></section>
 
       {/* ==========================================
           5. FAQ & DOWNLOAD
@@ -559,7 +526,7 @@ const Home = () => {
                      style={{background: "linear-gradient(135deg, #0d6efd, #6610f2)"}}>
                     <div className="position-relative z-2">
                         <h2 className="fw-bold mb-3">Get Fit on the Go</h2>
-                        <p className="mb-4 opacity-75">Download the Shape Up mobile app for iOS and Android.</p>
+                        <p className="mb-4 opacity-75">Open Shape Up in your mobile browser. On iPhone use Safari → Share → Add to Home Screen; on Android use your browser’s Add to Home screen option. This adds a browser shortcut.</p>
                         <div className="d-flex justify-content-center gap-3">
                             <Button variant="light" className="d-flex align-items-center gap-2 px-4 py-2 rounded-pill fw-bold hover-scale">
                                 <FaApple size={20}/> App Store

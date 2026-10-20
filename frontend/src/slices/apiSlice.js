@@ -1,6 +1,7 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 
-const baseQuery = fetchBaseQuery({ baseUrl: "" });
+const query=fetchBaseQuery({baseUrl:'',credentials:'same-origin'});
+const baseQuery=async(args,api,extra)=>{const result=await query(args,api,extra);if(result.error?.status===401&&api.getState().auth.userInfo)api.dispatch({type:'auth/logout'});return result;};
 
 export const apiSlice = createApi({
   baseQuery,

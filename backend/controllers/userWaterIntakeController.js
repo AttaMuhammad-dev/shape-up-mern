@@ -1,11 +1,13 @@
 import asyncHandler from "express-async-handler";
 import UserWaterIntake from "../models/userWaterIntakeModel.js";
+import {number,day} from '../utils/validation.js';
 
 // @desc        Log user's water intake
 // route        POST /api/users/water-intake
 // @access      Private
 const logWaterIntake = asyncHandler(async (req, res) => {
-  const { litersDrank } = req.body;
+  const litersDrank = number(req.body.litersDrank,"water intake",0,30);
+  number(litersDrank,'water intake',0,30);
   const date = new Date().toISOString().split("T")[0]; // Automatically set the date to today's date
 
   let waterIntake = await UserWaterIntake.findOne({
@@ -34,6 +36,7 @@ const logWaterIntake = asyncHandler(async (req, res) => {
 // route        PUT /api/users/water-intake/:date
 // @access      Private
 const updateWaterIntake = asyncHandler(async (req, res) => {
+  number(req.body.litersDrank,'water intake',0,30);
   const { litersDrank } = req.body;
   const { date } = req.params;
   const userId = req.user._id;
@@ -71,6 +74,7 @@ const updateWaterIntake = asyncHandler(async (req, res) => {
 // route        GET /api/users/water-intake/:date
 // @access      Private
 const getUserWaterIntake = asyncHandler(async (req, res) => {
+  day(req.params.date);
   const { date } = req.params;
   const userId = req.user._id;
 

@@ -1,4 +1,5 @@
 import React from 'react';
+import {ThemeProvider} from './context/ThemeContext';
 import { Outlet } from 'react-router-dom'; // Renders the current page
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -13,9 +14,9 @@ import './App.css'; // Your specific component styles
 
 const App = () => {
   return (
-    <div className="App" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+    <ThemeProvider><div className="App" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       <div role="note" style={{ textAlign: 'center', padding: '8px 16px', background: '#173f35', color: '#fff', fontSize: '13px' }}>
-        Portfolio demo · Use sample details only · AI availability depends on the provider · Email is disabled
+        Portfolio demo · Use sample details only · AI availability depends on the provider · Use Settings for support email
       </div>
       <ToastContainer />
       
@@ -32,7 +33,7 @@ const App = () => {
 
       {/* Footer */}
       <Footer />
-    </div>
+    </div></ThemeProvider>
   );
 };
 

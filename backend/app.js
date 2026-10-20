@@ -21,6 +21,7 @@ import dailyLogRoutes from "./routes/dailyLogRoutes.js";
 import reminderRoutes from "./routes/reminderRoutes.js"; 
 import aiRoutes from "./routes/aiRoutes.js"; 
 import emailRoutes from "./routes/emailRoutes.js"; 
+import {emailReady} from './services/emailService.js';
 import reviewRoutes from "./routes/reviewRoutes.js"; // <--- 1. IMPORT THIS
 
 const app = express();
@@ -38,6 +39,11 @@ app.use(cors({
 app.use(express.json({ limit: '256kb' }));
 app.use(express.urlencoded({ extended: true, limit: '256kb' }));
 app.use(cookieParser());
+app.use('/api',(req,res,next)=>{
+  res.set('Cache-Control','no-store');
+  if(['POST','PUT','PATCH','DELETE'].includes(req.method)&&req.body!==undefined&&(!req.body||typeof req.body!=='object'||Array.isArray(req.body)))return res.status(400).json({message:'Send a valid JSON object.'});
+  next();
+});
 app.disable('x-powered-by');
 app.use('/api', rateLimit({
     windowMs: 60_000, limit: 120, standardHeaders: 'draft-8', legacyHeaders: false,
@@ -50,7 +56,7 @@ const authLimiter = rateLimit({
 });
 app.post(['/api/users', '/api/users/auth'], authLimiter);
 
-app.get('/api/health', (req, res) => {res.set('Cache-Control','no-store');res.json({ status: 'ok', version:'ai-stability-20261020', databaseConfigured: Boolean(process.env.MONGO_URI), aiConfigured: process.env.AI_ENABLED === 'true' && Boolean(process.env.GEMINI_API_KEY?.trim()), emailEnabled:process.env.EMAIL_ENABLED === 'true' });});
+app.get('/api/health', (req, res) => {res.set('Cache-Control','no-store');res.json({ status: 'ok', version:'workflow-finalization-20261020', databaseConfigured: Boolean(process.env.MONGO_URI), aiConfigured: process.env.AI_ENABLED === 'true' && Boolean(process.env.GEMINI_API_KEY?.trim()), emailEnabled:emailReady() });});
 app.use('/api/ai',rateLimit({windowMs:60_000,limit:20,standardHeaders:'draft-8',legacyHeaders:false,message:{code:'RATE_LIMITED',reply:'Please wait a minute before asking the AI again. The other fitness tools remain available.'}}));
 
 // Mount Routes

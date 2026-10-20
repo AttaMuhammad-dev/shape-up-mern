@@ -5,8 +5,8 @@ const notFound = (req, res, next) => {
   };
   
   const errorHandler = (err, req, res, next) => {
-    let statusCode = res.statusCode === 200 ? 500 : res.statusCode;
-    let message = err.message;
+    let statusCode = err.status || (res.statusCode === 200 ? 500 : res.statusCode);
+    let message = statusCode >= 500 ? "The service could not complete this request. Please try again later." : err.message;
   
     if (err.name === "CastError" && err.kind === "ObjectId") {
       statusCode = 404;

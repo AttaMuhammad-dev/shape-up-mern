@@ -1,3 +1,4 @@
+import {localDay} from '../utils/reminders';
 import React, { useState, useEffect, useMemo } from "react";
 import { Container, Row, Col, Form, Button, Badge, Modal, Tab, Nav } from "react-bootstrap";
 import { toast } from "react-toastify";
@@ -71,7 +72,7 @@ const NotificationsPage = () => {
   // --- STATE ---
   const [title, setTitle] = useState("");
   const [time, setTime] = useState("");
-  const [date, setDate] = useState(new Date().toISOString().split("T")[0]); 
+  const [date, setDate] = useState(localDay()); 
   const [type, setType] = useState("General");
   const [priority, setPriority] = useState("Normal");
   
@@ -88,7 +89,7 @@ const NotificationsPage = () => {
   // --- DERIVED DATA ---
   const stats = useMemo(() => {
       if (!reminders) return { total: 0, high: 0, today: 0, workout: 0 };
-      const todayStr = new Date().toISOString().split("T")[0];
+      const todayStr = localDay();
       return {
           total: reminders.length,
           workout: reminders.filter(r => r.type === 'Workout').length,
@@ -98,7 +99,7 @@ const NotificationsPage = () => {
 
   const groupedReminders = useMemo(() => {
       if (!reminders) return {};
-      const todayStr = new Date().toISOString().split("T")[0];
+      const todayStr = localDay();
       
       return {
           today: reminders.filter(r => r.date === todayStr || !r.date).sort((a,b) => a.time.localeCompare(b.time)),

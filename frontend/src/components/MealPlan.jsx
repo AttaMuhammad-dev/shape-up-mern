@@ -1,3 +1,4 @@
+import {localDay} from '../utils/reminders';
 import React, { useState, useEffect } from "react";
 import { Form, Button } from "react-bootstrap";
 import { toast } from "react-toastify";
@@ -9,7 +10,7 @@ import {
 const MealPlan = () => {
   // FIX 1: Use ISO string for reliable YYYY-MM-DD format
   const [currentDate, setCurrentDate] = useState(
-    new Date().toISOString().split("T")[0]
+    localDay()
   );
 
   const [meal1, setMeal1] = useState("");
@@ -36,7 +37,7 @@ const MealPlan = () => {
             setSnacks(data.snacks || "");
             
             // Optional: Update local storage with fresh data
-            localStorage.setItem("mealPlan", JSON.stringify(data));
+
         } else {
             // Handle case where no plan exists for this date yet (clear inputs)
             setMeal1("");

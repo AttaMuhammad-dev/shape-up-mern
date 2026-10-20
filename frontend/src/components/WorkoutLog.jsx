@@ -1,3 +1,5 @@
+import {useSelector} from 'react-redux';
+import {localDay} from '../utils/reminders';
 import React, { useState, useEffect } from "react";
 import { Card, Form, Button, Table, Row, Col } from "react-bootstrap";
 import { toast } from "react-toastify";
@@ -5,14 +7,15 @@ import { useCreateWorkoutMutation, useGetWorkoutByDateQuery } from "../slices/wo
 import { FaCalendarAlt, FaDumbbell, FaClipboardList } from "react-icons/fa";
 
 const WorkoutLog = ({ selectedExercise }) => {
-  const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
+  const {userInfo}=useSelector(s=>s.auth);
+  const [date, setDate] = useState(localDay());
   const [exerciseName, setExerciseName] = useState("");
   const [sets, setSets] = useState("");
   const [reps, setReps] = useState("");
   const [weight, setWeight] = useState("");
 
   const [createWorkout, { isLoading }] = useCreateWorkoutMutation();
-  const { data: workoutData, refetch } = useGetWorkoutByDateQuery(date);
+  const { data: workoutData, refetch } = useGetWorkoutByDateQuery(date,{skip:!userInfo});
 
   // Auto-fill when exercise is selected
   useEffect(() => {
@@ -23,6 +26,7 @@ const WorkoutLog = ({ selectedExercise }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if(!userInfo)return toast.info("Please sign in to save a workout.");
     if (!exerciseName || !sets || !reps) {
         toast.error("Please fill in all fields");
         return;

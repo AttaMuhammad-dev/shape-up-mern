@@ -4,37 +4,9 @@ import Status from "../models/userStatusModel.js";
 // @desc      Create user status
 // @route     POST /api/user/status
 // @access    Private
-const createUserStatus = asyncHandler(async (req, res) => {
-  const {
-    height,
-    weight,
-    goalWeight,
-    age,
-    gender,
-    dateOfBirth,
-    activityLevel,
-    goal,
-  } = req.body;
-  const user = req.user._id;
+const createUserStatus = asyncHandler(async (req, res, next) => {
+  return updateUserStatus(req,res,next);
 
-  const status = await Status.create({
-    user,
-    height,
-    weight,
-    goalWeight,
-    age,
-    gender,
-    dateOfBirth,
-    activityLevel,
-    goal,
-  });
-
-  if (status) {
-    res.status(201).json(status);
-  } else {
-    res.status(400);
-    throw new Error("Invalid user status data");
-  }
 });
 
 // @desc      Get user status

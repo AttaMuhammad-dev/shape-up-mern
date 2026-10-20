@@ -1,5 +1,6 @@
 import asyncHandler from "express-async-handler";
 import Review from "../models/reviewModel.js";
+import {number,text} from '../utils/validation.js';
 
 // @desc    Get all reviews
 // @route   GET /api/reviews
@@ -14,6 +15,7 @@ const getReviews = asyncHandler(async (req, res) => {
 // @access  Private
 const createReview = asyncHandler(async (req, res) => {
   const { rating, comment } = req.body;
+  number(rating,'rating',1,5,true);text(comment,'Comment',1,2000);
 
   if (!rating || !comment) {
     res.status(400);

@@ -51,17 +51,14 @@ const Footer = () => {
           <Col md={6} className="text-center text-md-start mb-3 mb-md-0">
             <h5 className="brand-text mb-1">SHAPE UP</h5>
             <small className="copyright-text">
-              &copy; {new Date().getFullYear()} Shape-Up, Inc. All Rights Reserved.
+              &copy; {new Date().getFullYear()} Shape Up · A student project by Atta Muhammad.
             </small>
           </Col>
 
           {/* Right: Social Icons */}
           <Col md={6} className="text-center text-md-end">
             <div className="d-flex justify-content-center justify-content-md-end">
-              <FaFacebook className="social-icon" />
-              <FaTwitter className="social-icon" />
-              <FaInstagram className="social-icon" />
-              <FaLinkedin className="social-icon" />
+              <a href="https://www.linkedin.com/in/atta-muhammad-729b0b315/" target="_blank" rel="noopener noreferrer" className="me-3">LinkedIn</a><a href="https://github.com/AttaMuhammad-dev/shape-up-mern" target="_blank" rel="noopener noreferrer">Source code</a>
             </div>
           </Col>
 

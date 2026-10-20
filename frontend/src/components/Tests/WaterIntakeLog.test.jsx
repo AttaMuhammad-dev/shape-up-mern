@@ -1,10 +1,11 @@
+import {vi} from 'vitest';
 import React from 'react';
 import {render,fireEvent,screen,waitFor} from '@testing-library/react';
-import '@testing-library/jest-dom';
+
 import WaterIntake from '../WaterIntake';
-const mockUpdate=jest.fn();
-jest.mock('../../slices/usersApiSlice',()=>({useUpdateWaterIntakeMutation:()=>[mockUpdate,{isLoading:false}]}));
-beforeEach(()=>{jest.clearAllMocks();global.fetch=jest.fn(async()=>({ok:true,json:async()=>({litersDrank:1.5})}));});
+const {mockUpdate}=vi.hoisted(()=>({mockUpdate:vi.fn()}));
+vi.mock('../../slices/usersApiSlice',()=>({useUpdateWaterIntakeMutation:()=>[mockUpdate,{isLoading:false}]}));
+beforeEach(()=>{vi.clearAllMocks();global.fetch=vi.fn(async()=>({ok:true,json:async()=>({litersDrank:1.5})}));});
 test('loads today’s signed-in water amount instead of stale local data',async()=>{
   localStorage.setItem('waterIntake','{broken');render(<WaterIntake/>);
   expect(await screen.findByText('Water logged today: 1.5 litres')).toBeInTheDocument();

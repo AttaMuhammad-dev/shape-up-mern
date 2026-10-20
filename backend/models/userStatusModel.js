@@ -9,18 +9,22 @@ const statusSchema = mongoose.Schema({
   height: {
     type: Number,
     required: true,
+    min:30,max:300,
   },
   weight: {
     type: Number,
     required: true,
+    min:1,max:700,
   },
   goalWeight: {
     type: Number,
     required: true,
+    min:1,max:700,
   },
   age: {
     type: Number,
     required: true,
+    min:1,max:120,
   },
   gender: {
     type: String,

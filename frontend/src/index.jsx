@@ -1,4 +1,4 @@
-import React from "react";
+import React,{lazy,Suspense} from "react";
 import ReactDOM from "react-dom/client";
 import {
   createBrowserRouter,
@@ -21,18 +21,19 @@ import PublicRoute from "./components/PublicRoute";
 
 // ... baaki saara code waisa hi rahega ...
 import Home from "./pages/Home";
-import Register from "./pages/Register";
+const Register=lazy(()=>import('./pages/Register.jsx'));
 import Login from "./pages/Login";
-import Profile from "./pages/Profile";
-import Workouts from "./pages/Workouts";
-import NutritionChecker from "./pages/NutritionChecker";
-import BMRCalculator from "./pages/BMRCalculator";
-import Features from "./pages/Features";
-import About from "./pages/About";
+const Profile=lazy(()=>import('./pages/Profile.jsx'));
+const Workouts=lazy(()=>import('./pages/Workouts.jsx'));
+const NutritionChecker=lazy(()=>import('./pages/NutritionChecker.jsx'));
+const BMRCalculator=lazy(()=>import('./pages/BMRCalculator.jsx'));
+const Features=lazy(()=>import('./pages/Features.jsx'));
+const About=lazy(()=>import('./pages/About.jsx'));
 import NotFound from "./pages/NotFound";
-import Dashboard from "./pages/Dashboard";
-import NotificationsPage from "./pages/NotificationsPage"; 
-import Settings from "./pages/Settings"; 
+const Dashboard=lazy(()=>import('./pages/Dashboard.jsx'));
+const NotificationsPage=lazy(()=>import('./pages/NotificationsPage.jsx')); 
+const Privacy=lazy(()=>import('./pages/Privacy.jsx'));
+const Settings=lazy(()=>import('./pages/Settings.jsx')); 
 
 const router = createBrowserRouter(
   createRoutesFromElements(
@@ -40,6 +41,7 @@ const router = createBrowserRouter(
       {/* ... routes same rahenge ... */}
       <Route index={true} path="/" element={<Home />} />
       <Route path="/pages/features" element={<Features />} />
+      <Route path="/pages/privacy" element={<Privacy/>} />
       <Route path="/pages/about" element={<About />} />
       <Route path="/pages/workouts" element={<Workouts />} />
       <Route path="/pages/nutrition-checker" element={<NutritionChecker />} />
@@ -66,7 +68,7 @@ const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(
   <React.StrictMode>
     <Provider store={store}>
-      <RouterProvider router={router} />
+      <Suspense fallback={<div role="status" className="p-5 text-center">Loading Shape Up…</div>}><RouterProvider router={router} /></Suspense>
     </Provider>
   </React.StrictMode>
 );

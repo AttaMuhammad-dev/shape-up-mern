@@ -1,5 +1,6 @@
 import asyncHandler from "express-async-handler";
 import Reminder from "../models/reminderModel.js";
+import {day} from '../utils/validation.js';
 
 // @desc    Get all reminders
 // @route   GET /api/reminders
@@ -14,6 +15,7 @@ const getReminders = asyncHandler(async (req, res) => {
 // @access  Private
 const createReminder = asyncHandler(async (req, res) => {
   const { title, time, type, date = new Date().toISOString().slice(0,10), priority = 'Normal' } = req.body;
+  day(date);
   
   if (!title || !time) {
     res.status(400);

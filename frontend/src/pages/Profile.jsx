@@ -162,10 +162,11 @@ const Profile = () => {
           _id: userInfo._id,
           name,
           email,
+          ...(email!==userInfo.email?{currentPassword}:{}),
           image: avatar,
-          age: Number(age),
-          height: Number(height),
-          weight: Number(weight),
+          ...(age?{age:Number(age)}:{}),
+          ...(height?{height:Number(height)}:{}),
+          ...(weight?{weight:Number(weight)}:{}),
           gender,
           goal,
         };
@@ -220,32 +221,22 @@ const Profile = () => {
   };
 
   // --- DELETE ACCOUNT HANDLER ---
-  const handleDeleteAccount = async () => {
-      try {
-          // NOTE: Assuming you have a deleteUser API call available. 
-          // If not in slice, you need to add it: builder.mutation({ query: (id) => ({ url: `/users/${id}`, method: 'DELETE' }) })
-          // await deleteUser(userInfo._id).unwrap(); 
-          
-          // Simulating deletion for now if API hook is missing in your import
-          // REPLACE with actual API call: await deleteUserMutation(userInfo._id).unwrap();
-          
-          toast.info("Account deletion is unavailable in this portfolio demo. No data has been deleted.");
-          setShowDeleteModal(false);
-      } catch (err) {
-          toast.error(err?.data?.message || "Delete failed");
-          setShowDeleteModal(false);
-      }
-  };
+  const handleDeleteAccount = () => window.location.assign('/pages/settings?tab=security');
 
-  const handleExportData = () => {
-      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(userInfo));
+  const handleExportData = async () => {
+    try {
+      const response=await fetch('/api/users/export');
+      if(!response.ok)throw new Error('Export failed');
+      const completeData=await response.json();
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(completeData,null,2));
       const downloadAnchorNode = document.createElement('a');
       downloadAnchorNode.setAttribute("href", dataStr);
-      downloadAnchorNode.setAttribute("download", "shape_up_profile.json");
+      downloadAnchorNode.setAttribute("download", "shape_up_data.json");
       document.body.appendChild(downloadAnchorNode);
       downloadAnchorNode.click();
       downloadAnchorNode.remove();
       toast.success("Data exported!");
+    }catch{toast.error("Could not export your data. Please try again.");}
   };
 
   return (
@@ -582,10 +573,10 @@ const Profile = () => {
                                 <div className="d-flex justify-content-between align-items-center">
                                     <div>
                                         <h6 className="fw-bold text-danger mb-1">Delete Account</h6>
-                                        <p className="small text-muted mb-0">Account deletion is not available in this portfolio demo. Use sample details only.</p>
+                                        <p className="small text-muted mb-0">Permanently remove your account and related records through the password-protected confirmation in Settings.</p>
                                     </div>
-                                    <Button variant="secondary" className="fw-bold" disabled>
-                                        Unavailable in demo
+                                    <Button variant="danger" className="fw-bold" onClick={handleDeleteAccount}>
+                                        Delete account securely
                                     </Button>
                                 </div>
                             </div>
@@ -594,7 +585,7 @@ const Profile = () => {
                                 <div className="d-flex justify-content-between align-items-center">
                                     <div>
                                         <h6 className="fw-bold text-dark mb-1">Export Data</h6>
-                                        <p className="small text-muted mb-0">Download a JSON file containing all your profile info.</p>
+                                        <p className="small text-muted mb-0">Download your profile, logs, meal plans and reminders as JSON.</p>
                                     </div>
                                     <Button variant="outline-dark" className="fw-bold" onClick={handleExportData}>
                                         Export
@@ -620,7 +611,7 @@ const Profile = () => {
             </Modal.Body>
             <Modal.Footer className="justify-content-center border-0 pb-4">
                 <Button variant="secondary" onClick={() => setShowDeleteModal(false)}>Cancel</Button>
-                <Button variant="danger" className="fw-bold" onClick={handleDeleteAccount}>Yes, Delete Account</Button>
+                <Button variant="danger" className="fw-bold" onClick={handleDeleteAccount}>Continue to secure deletion</Button>
             </Modal.Footer>
         </Modal>
 

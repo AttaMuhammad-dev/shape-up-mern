@@ -1,3 +1,4 @@
+import {localDay} from '../utils/reminders';
 import React, { useState, useMemo } from "react";
 import {
   Container,
@@ -150,11 +151,11 @@ const NutritionChecker = () => {
   // --- COMPONENT STATE ---
   const [query, setQuery] = useState("");
   const [foodData, setFoodData] = useState(null);
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split("T")[0]);
+  const [selectedDate, setSelectedDate] = useState(localDay());
   const [activeTab, setActiveTab] = useState("search");
 
   // --- API HOOKS ---
-  const { data: dailyLogs, isLoading: loadingLogs, refetch } = useGetDailyLogsQuery();
+  const { data: dailyLogs, isLoading: loadingLogs, refetch } = useGetDailyLogsQuery(undefined,{skip:!userInfo});
   const [updateDailyLog, { isLoading: updatingLog }] = useUpdateDailyLogMutation();
   const [deleteFoodItem, { isLoading: deletingLog }] = useDeleteFoodItemMutation();
 

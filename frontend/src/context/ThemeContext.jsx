@@ -9,6 +9,7 @@ export const ThemeProvider = ({ children }) => {
   useEffect(() => {
     // Update the HTML attribute so CSS variables can switch
     document.documentElement.setAttribute('data-theme', theme);
+    document.body.classList.toggle('dark-mode',theme==='dark');
     localStorage.setItem('theme', theme);
   }, [theme]);
 
@@ -17,7 +18,7 @@ export const ThemeProvider = ({ children }) => {
   };
 
   return (
-    <ThemeContext.Provider value={{ theme, toggleTheme }}>
+    <ThemeContext.Provider value={{ theme, toggleTheme, setTheme }}>
       {children}
     </ThemeContext.Provider>
   );

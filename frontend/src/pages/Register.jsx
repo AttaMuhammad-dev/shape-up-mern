@@ -1,28 +1,33 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Form, Button, Row, Col, Container, InputGroup } from "react-bootstrap";
+import { Form, Button, Row, Col, Container, InputGroup, ProgressBar } from "react-bootstrap";
 import { 
-  FaSignInAlt, FaUserCircle, FaEnvelope, FaLock, 
+  FaUserPlus, FaUser, FaEnvelope, FaLock, FaCheckCircle, 
   FaGoogle, FaFacebookF, FaEye, FaEyeSlash 
 } from "react-icons/fa"; 
 import { useDispatch, useSelector } from "react-redux";
-import { useLoginMutation } from "../slices/usersApiSlice";
+import { useRegisterMutation } from "../slices/usersApiSlice";
 import { setCredentials } from "../slices/authSlice";
 import { toast } from "react-toastify";
 import Loader from "../components/Loader";
 import Footer from "../components/Footer";
 
-const Login = () => {
+const Register = () => {
   // --- STATE ---
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [agreeTerms, setAgreeTerms] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [rememberMe, setRememberMe] = useState(false);
+  
+  // Password Strength Logic
+  const [passwordStrength, setPasswordStrength] = useState(0);
 
   // --- HOOKS ---
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const [login, { isLoading }] = useLoginMutation();
+  const [register, { isLoading }] = useRegisterMutation();
   const { userInfo } = useSelector((state) => state.auth);
 
   // --- EFFECTS ---
@@ -32,26 +37,40 @@ const Login = () => {
     }
   }, [navigate, userInfo]);
 
+  useEffect(() => {
+      // Calculate Password Strength
+      let score = 0;
+      if (password.length > 5) score += 25;
+      if (password.length > 8) score += 25;
+      if (/[A-Z]/.test(password)) score += 25;
+      if (/[0-9]/.test(password)) score += 25;
+      setPasswordStrength(score);
+  }, [password]);
+
   // --- HANDLERS ---
   const submitHandler = async (e) => {
     e.preventDefault();
-    if (!email || !password) {
-        toast.error("Please fill in all fields.");
+    
+    if (!name || !email || !password || !confirmPassword) {
+        toast.error("All fields are required.");
         return;
     }
     
-    try {
-      const res = await login({ email, password }).unwrap();
-      dispatch(setCredentials({ ...res }));
-      
-      if (rememberMe) {
-          localStorage.setItem("rememberUser", email);
-      } else {
-          localStorage.removeItem("rememberUser");
-      }
+    if (password !== confirmPassword) {
+      toast.error("Passwords do not match");
+      return;
+    }
 
+    if (!agreeTerms) {
+        toast.error("Please confirm that you will use sample details in this portfolio demo.");
+        return;
+    }
+
+    try {
+      const res = await register({ name, email, password }).unwrap();
+      dispatch(setCredentials({ ...res }));
       navigate("/");
-      toast.success(`Welcome back, ${res.name}!`);
+      toast.success("Account Created Successfully!");
     } catch (err) {
       toast.error(err?.data?.message || err.error);
     }
@@ -61,14 +80,17 @@ const Login = () => {
       setShowPassword(!showPassword);
   };
 
-  const handleSocialLogin = (provider) => {
-      toast.info(`${provider} login is coming soon!`);
+
+  const getStrengthColor = () => {
+      if (passwordStrength < 50) return "danger";
+      if (passwordStrength < 75) return "warning";
+      return "success";
   };
 
   return (
     <div className="page-wrapper d-flex flex-column min-vh-100 position-relative overflow-hidden">
       
-      {/* --- STYLES (FIXED COLORS & DARK MODE) --- */}
+      {/* --- STYLES --- */}
       <style>
         {`
           /* GLOBAL WRAPPER */
@@ -76,11 +98,11 @@ const Login = () => {
             background-color: #f8f9fa;
             font-family: 'Inter', sans-serif;
             position: relative;
-            color: #212529; /* Default light mode text */
+            color: #212529;
           }
           body.dark-mode .page-wrapper {
             background-color: #0f172a;
-            color: #f8fafc !important; /* Force light text in dark mode */
+            color: #f8fafc !important;
           }
 
           /* ANIMATED BACKGROUND SHAPES */
@@ -93,21 +115,21 @@ const Login = () => {
             animation: floatShape 10s infinite alternate;
           }
           .shape-1 {
-            top: -100px; left: -100px; width: 500px; height: 500px;
-            background: rgba(13, 110, 253, 0.15);
+            top: -150px; left: -150px; width: 600px; height: 600px;
+            background: rgba(13, 202, 240, 0.1);
           }
           .shape-2 {
-            bottom: -100px; right: -100px; width: 400px; height: 400px;
-            background: rgba(13, 202, 240, 0.15);
+            bottom: -150px; right: -150px; width: 500px; height: 500px;
+            background: rgba(102, 16, 242, 0.1);
             animation-delay: 2s;
           }
           @keyframes floatShape {
             0% { transform: translate(0, 0) scale(1); }
-            100% { transform: translate(20px, 20px) scale(1.1); }
+            100% { transform: translate(30px, -30px) scale(1.1); }
           }
 
-          /* LOGIN CARD */
-          .login-card {
+          /* REGISTER CARD */
+          .register-card {
             background: #ffffff;
             border: 1px solid #e9ecef;
             border-radius: 24px;
@@ -115,17 +137,16 @@ const Login = () => {
             padding: 40px;
             position: relative;
             z-index: 2;
-            overflow: hidden;
             transition: 0.3s;
           }
           
-          body.dark-mode .login-card {
+          body.dark-mode .register-card {
             background: #1e293b;
             border-color: rgba(255, 255, 255, 0.1);
             box-shadow: 0 20px 50px rgba(0,0,0,0.4);
           }
 
-          /* HEADINGS & LABELS - COLOR FIX */
+          /* HEADINGS & TEXT */
           .text-adaptive-head { color: #212529; }
           .text-adaptive-sub { color: #6c757d; }
 
@@ -134,10 +155,10 @@ const Login = () => {
           body.dark-mode .form-label,
           body.dark-mode .form-check-label,
           body.dark-mode .text-muted { 
-              color: #cbd5e1 !important; /* Lighter gray for dark mode readability */
+              color: #cbd5e1 !important; 
           }
 
-          /* INPUT GROUPS & FIELDS */
+          /* INPUT GROUPS */
           .custom-input-group .input-group-text {
             background: #f8f9fa;
             border: 1px solid #ced4da;
@@ -167,29 +188,18 @@ const Login = () => {
              border-color: #0d6efd;
              color: #0d6efd;
           }
-          
-          /* Eye Icon Button */
-          .btn-eye-toggle {
-              border-top-right-radius: 12px; 
-              border-bottom-right-radius: 12px; 
-              border-color: #ced4da; 
-              background-color: #f8f9fa;
-              color: #6c757d;
-          }
 
-          /* Dark Mode Inputs - CRITICAL FIXES */
+          /* Dark Mode Inputs */
           body.dark-mode .custom-input, 
           body.dark-mode .custom-input-group .input-group-text,
           body.dark-mode .btn-eye-toggle {
             background-color: #334155 !important;
             border-color: rgba(255, 255, 255, 0.1) !important;
-            color: #fff !important; /* Force white text inside inputs */
+            color: #fff !important;
           }
-          
           body.dark-mode .custom-input::placeholder {
-            color: rgba(255, 255, 255, 0.5) !important; /* Visible placeholder in dark mode */
+            color: rgba(255, 255, 255, 0.5) !important;
           }
-
           body.dark-mode .custom-input:focus, 
           body.dark-mode .custom-input:focus + .input-group-text,
           body.dark-mode .custom-input-group:focus-within .input-group-text,
@@ -200,7 +210,7 @@ const Login = () => {
           }
 
           /* BUTTONS */
-          .btn-login {
+          .btn-register {
             padding: 14px;
             font-weight: 700;
             border-radius: 12px;
@@ -211,7 +221,7 @@ const Login = () => {
             transition: 0.3s;
             color: white;
           }
-          .btn-login:hover {
+          .btn-register:hover {
             transform: translateY(-2px);
             box-shadow: 0 15px 30px rgba(13, 110, 253, 0.5);
             background: linear-gradient(135deg, #0b5ed7 0%, #003585 100%);
@@ -238,32 +248,40 @@ const Login = () => {
           body.dark-mode .btn-social {
              background: rgba(255,255,255,0.05);
              border-color: rgba(255,255,255,0.1);
-             color: #fff !important; /* Force white text for social buttons in dark mode */
+             color: #fff !important;
           }
           body.dark-mode .btn-social:hover {
              background: rgba(255,255,255,0.1);
           }
 
-          /* LINKS */
+          /* LINKS & UTILS */
           .auth-link { text-decoration: none; font-weight: 700; color: #0d6efd; transition: 0.2s; }
           .auth-link:hover { text-decoration: underline; color: #003585; }
           body.dark-mode .auth-link { color: #38bdf8; }
           body.dark-mode .auth-link:hover { color: #7dd3fc; }
 
-          /* HERO ICON ANIMATION */
+          .btn-eye-toggle {
+              border-top-right-radius: 12px; 
+              border-bottom-right-radius: 12px; 
+              border-color: #ced4da; 
+              background-color: #f8f9fa;
+              color: #6c757d;
+          }
+
+          /* HERO ICON */
           .hero-icon-wrapper {
-            width: 100px; height: 100px;
-            background: rgba(13, 110, 253, 0.1);
+            width: 90px; height: 90px;
+            background: rgba(13, 202, 240, 0.1);
             border-radius: 50%;
             display: flex; align-items: center; justify-content: center;
             margin: 0 auto 20px;
             animation: pulseGlow 3s infinite;
           }
-          .hero-icon { font-size: 3rem; color: #0d6efd; }
+          .hero-icon { font-size: 2.5rem; color: #0dcaf0; }
           @keyframes pulseGlow {
-             0% { box-shadow: 0 0 0 0 rgba(13, 110, 253, 0.4); }
-             70% { box-shadow: 0 0 0 20px rgba(13, 110, 253, 0); }
-             100% { box-shadow: 0 0 0 0 rgba(13, 110, 253, 0); }
+             0% { box-shadow: 0 0 0 0 rgba(13, 202, 240, 0.4); }
+             70% { box-shadow: 0 0 0 20px rgba(13, 202, 240, 0); }
+             100% { box-shadow: 0 0 0 0 rgba(13, 202, 240, 0); }
           }
 
           .fade-in { animation: fadeIn 0.8s ease-out forwards; opacity: 0; }
@@ -271,30 +289,43 @@ const Login = () => {
         `}
       </style>
 
-      {/* BACKGROUND ELEMENTS */}
       <div className="bg-shape shape-1"></div>
       <div className="bg-shape shape-2"></div>
 
       <Container className="flex-grow-1 d-flex flex-column align-items-center justify-content-center py-5 position-relative" style={{zIndex: 2}}>
         
         <Row className="justify-content-center w-100 fade-in">
-          <Col md={8} lg={5}>
+          <Col md={8} lg={6} xl={5}>
             
-            {/* LOGO / BRANDING AREA */}
             <div className="text-center mb-4">
                 <div className="hero-icon-wrapper">
-                    <FaUserCircle className="hero-icon" />
+                    <FaUserPlus className="hero-icon" />
                 </div>
-                <h3 className="fw-bold mb-1 text-adaptive-head" style={{letterSpacing: '-1px'}}>Welcome Back!</h3>
-                <p className="text-adaptive-sub small">Sign in to continue your fitness journey</p>
+                <h3 className="fw-bold mb-1 text-adaptive-head" style={{letterSpacing: '-1px'}}>Start Your Journey</h3>
+                <p className="text-adaptive-sub small">Create an account to track your progress & goals.</p>
             </div>
 
-            <div className="login-card">
+            <div className="register-card">
               
               <Form onSubmit={submitHandler}>
                 
+                {/* NAME INPUT */}
+                <Form.Group className="mb-3" controlId="formName">
+                  <Form.Label className="fw-bold small text-uppercase" style={{fontSize: '0.75rem'}}>Full Name</Form.Label>
+                  <InputGroup className="custom-input-group">
+                      <InputGroup.Text><FaUser /></InputGroup.Text>
+                      <Form.Control 
+                        className="custom-input" 
+                        type="text" 
+                        placeholder="John Doe" 
+                        value={name} 
+                        onChange={(e) => setName(e.target.value)} 
+                      />
+                  </InputGroup>
+                </Form.Group>
+
                 {/* EMAIL INPUT */}
-                <Form.Group className="mb-4" controlId="formEmail">
+                <Form.Group className="mb-3" controlId="formEmail">
                   <Form.Label className="fw-bold small text-uppercase" style={{fontSize: '0.75rem'}}>Email Address</Form.Label>
                   <InputGroup className="custom-input-group">
                       <InputGroup.Text><FaEnvelope /></InputGroup.Text>
@@ -304,23 +335,21 @@ const Login = () => {
                         placeholder="name@example.com" 
                         value={email} 
                         onChange={(e) => setEmail(e.target.value)} 
-                        required
                       />
                   </InputGroup>
                 </Form.Group>
 
-                {/* PASSWORD INPUT - Forgot Password Link Removed */}
-                <Form.Group className="mb-4" controlId="formPassword">
+                {/* PASSWORD INPUT */}
+                <Form.Group className="mb-2" controlId="formPassword">
                   <Form.Label className="fw-bold small text-uppercase" style={{fontSize: '0.75rem'}}>Password</Form.Label>
                   <InputGroup className="custom-input-group">
                       <InputGroup.Text><FaLock /></InputGroup.Text>
                       <Form.Control 
                         className="custom-input" 
                         type={showPassword ? "text" : "password"} 
-                        placeholder="••••••••" 
+                        placeholder="Create password" 
                         value={password} 
                         onChange={(e) => setPassword(e.target.value)}
-                        required
                       />
                       <Button 
                         variant="outline-secondary" 
@@ -332,60 +361,74 @@ const Login = () => {
                   </InputGroup>
                 </Form.Group>
 
-                {/* REMEMBER ME */}
-                <Form.Group className="mb-4" controlId="formBasicCheckbox">
+                {/* Password Strength Meter */}
+                {password && (
+                    <div className="mb-3">
+                        <ProgressBar 
+                            now={passwordStrength} 
+                            variant={getStrengthColor()} 
+                            style={{height: '4px', borderRadius: '2px'}} 
+                        />
+                        <div className="d-flex justify-content-between mt-1">
+                            <small className="text-muted" style={{fontSize: '0.65rem'}}>Strength</small>
+                            <small className={`text-${getStrengthColor()} fw-bold`} style={{fontSize: '0.65rem'}}>
+                                {passwordStrength < 50 ? 'Weak' : passwordStrength < 75 ? 'Medium' : 'Strong'}
+                            </small>
+                        </div>
+                    </div>
+                )}
+
+                {/* CONFIRM PASSWORD */}
+                <Form.Group className="mb-4" controlId="formConfirmPassword">
+                  <Form.Label className="fw-bold small text-uppercase" style={{fontSize: '0.75rem'}}>Confirm Password</Form.Label>
+                  <InputGroup className="custom-input-group">
+                      <InputGroup.Text><FaCheckCircle /></InputGroup.Text>
+                      <Form.Control 
+                        className="custom-input" 
+                        type="password" 
+                        placeholder="Repeat password" 
+                        value={confirmPassword} 
+                        onChange={(e) => setConfirmPassword(e.target.value)} 
+                      />
+                  </InputGroup>
+                </Form.Group>
+
+                {/* TERMS CHECKBOX */}
+                <Form.Group className="mb-4" controlId="formTerms">
                     <Form.Check 
                         type="checkbox" 
-                        label={<span className="small fw-bold text-adaptive-sub">Remember me for 30 days</span>}
-                        checked={rememberMe}
-                        onChange={(e) => setRememberMe(e.target.checked)}
+                        label={
+                            <span className="small text-adaptive-sub">
+                                I understand this is a portfolio demo and will use sample details. <Link to="/pages/privacy" className="text-decoration-none">Read the data notice</Link>
+                            </span>
+                        }
+                        checked={agreeTerms}
+                        onChange={(e) => setAgreeTerms(e.target.checked)}
                     />
                 </Form.Group>
 
-                {/* LOADER OR BUTTON */}
+                {/* SUBMIT BUTTON */}
                 {isLoading ? (
                     <div className="text-center py-3"><Loader size="sm" /></div>
                 ) : (
-                    <Button variant="primary" type="submit" className="w-100 btn-login mb-4">
-                        Sign In <FaSignInAlt className="ms-2"/>
+                    <Button variant="primary" type="submit" className="w-100 btn-register mb-4">
+                        Create Account
                     </Button>
                 )}
-
-                {/* SOCIAL LOGIN DIVIDER */}
-                <div className="d-flex align-items-center mb-4">
-                    <hr className="flex-grow-1 opacity-25" style={{borderColor: 'currentColor'}} />
-                    <span className="mx-3 small text-adaptive-sub fw-bold">OR CONTINUE WITH</span>
-                    <hr className="flex-grow-1 opacity-25" style={{borderColor: 'currentColor'}} />
-                </div>
-
-                <Row className="g-2 mb-4">
-                    <Col>
-                        <button type="button" className="btn-social w-100 btn-google" onClick={() => handleSocialLogin('Google')}>
-                            <FaGoogle className="me-2"/> Google
-                        </button>
-                    </Col>
-                    <Col>
-                        <button type="button" className="btn-social w-100 btn-facebook" onClick={() => handleSocialLogin('Facebook')}>
-                            <FaFacebookF className="me-2"/> Facebook
-                        </button>
-                    </Col>
-                </Row>
-
-                {/* REGISTER LINK */}
+{/* LOGIN LINK */}
                 <div className="text-center pt-2">
                   <span className="text-adaptive-sub small">
-                    Don't have an account yet? 
-                    <Link to="/pages/register" className="auth-link ms-2">Create Account</Link>
+                    Already have an account? 
+                    <Link to="/pages/login" className="auth-link ms-2">Log In</Link>
                   </span>
                 </div>
 
               </Form>
             </div>
             
-            {/* FOOTER NOTE */}
             <div className="text-center mt-4 opacity-75">
                 <small className="text-adaptive-sub" style={{fontSize: '0.7rem'}}>
-                    &copy; {new Date().getFullYear()} Shape Up Inc. By logging in, you agree to our Terms.
+                    &copy; {new Date().getFullYear()} Shape Up · Student portfolio project.
                 </small>
             </div>
 
@@ -398,4 +441,4 @@ const Login = () => {
   );
 };
 
-export default Login;
+export default Register;

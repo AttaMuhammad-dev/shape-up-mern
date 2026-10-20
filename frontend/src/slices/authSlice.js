@@ -1,10 +1,8 @@
 import { createSlice } from '@reduxjs/toolkit';
 
-const initialState = {
-  userInfo: localStorage.getItem('userInfo')
-    ? JSON.parse(localStorage.getItem('userInfo'))
-    : null,
-};
+let savedUser=null;
+try{const value=JSON.parse(localStorage.getItem('userInfo')||'null');if(value&&typeof value._id==='string'&&typeof value.name==='string')savedUser=value;}catch{localStorage.removeItem('userInfo');}
+const initialState={userInfo:savedUser};
 
 const authSlice = createSlice({
   name: 'auth',
@@ -18,6 +16,7 @@ const authSlice = createSlice({
     logout: (state) => {
       state.userInfo = null;
       localStorage.removeItem('userInfo'); // Permanent Storage Clear
+      for(const key of ['mealPlan','waterIntake','lastDailyGoalNotification'])localStorage.removeItem(key);
       sessionStorage.clear(); // Temporary Session Clear (Zaroori hai!)
     },
   },

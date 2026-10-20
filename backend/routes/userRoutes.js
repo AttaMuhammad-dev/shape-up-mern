@@ -6,6 +6,8 @@ import {
   logoutUser,
   getUserProfile,
   updateUserProfile,
+  deleteUserAccount,
+  exportUserData,
 } from "../controllers/userController.js";
 import {
   logWaterIntake,
@@ -21,7 +23,10 @@ router.post("/logout", logoutUser);
 router
   .route("/profile")
   .get(protect, getUserProfile)
-  .put(protect, updateUserProfile);
+  .put(protect, updateUserProfile)
+  .delete(protect, deleteUserAccount);
+
+router.get('/export',protect,exportUserData);
 
 router
   .route("/water-intake")

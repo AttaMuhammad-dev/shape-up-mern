@@ -61,15 +61,15 @@ const FEATURES_LIST = [
     title: "Workout Database", 
     icon: FaDumbbell, 
     color: "#0d6efd", 
-    description: "Access 500+ exercises with video guides. Filter by muscle group, difficulty, and available equipment.", 
+    description: "Browse the exercise library, view movement illustrations and filter by name, body part or equipment.", 
     link: "/pages/workouts" 
   },
   { 
     id: 2,
-    title: "AI Nutrition Checker", 
+    title: "Nutrition Checker", 
     icon: FaAppleAlt, 
     color: "#198754", 
-    description: "Instantly analyze food quality. Get detailed macronutrient breakdowns for millions of items.", 
+    description: "Search the included food dataset, adjust portions and save calories and macronutrients to your daily log.", 
     link: "/pages/nutrition-checker" 
   },
   { 
@@ -77,7 +77,7 @@ const FEATURES_LIST = [
     title: "BMR Calculator", 
     icon: FaCalculator, 
     color: "#ffc107", 
-    description: "Scientific metabolic rate calculation. Know exactly how many calories you need to cut or bulk.", 
+    description: "Estimate basal metabolic rate and activity-adjusted calorie needs from your inputs.", 
     link: "/pages/bmr-calculator" 
   },
   { 
@@ -85,7 +85,7 @@ const FEATURES_LIST = [
     title: "Smart Meal Planner", 
     icon: FaUtensils, 
     color: "#fd7e14", 
-    description: "Generate weekly meal plans based on your dietary preferences (Keto, Vegan, Paleo, etc.).", 
+    description: "Write and save your own daily meals and snacks alongside your diet profile.", 
     link: "/pages/profile/meal-plan" 
   },
   { 
@@ -107,9 +107,9 @@ const FEATURES_LIST = [
 ];
 
 const FAQS = [
-    { q: "Do I need a wearable device?", a: "No, Shape Up works perfectly with manual logging, though we support syncing with major devices." },
-    { q: "Is the food database global?", a: "Yes! We cover local cuisines from over 100 countries, including specific regional dishes." },
-    { q: "Can I export my data?", a: "Pro users can export their nutrition and workout logs to PDF or CSV formats for sharing with trainers." },
+    { q: "Do I need a wearable device?", a: "No wearable is required. Logging is manual; compatible browsers may offer an optional motion-based step counter. Wearable syncing is not provided." },
+    { q: "Is the food database global?", a: "The included sample dataset supports food searches and portion-based estimates. Coverage is limited and nutrition values are approximate." },
+    { q: "Can I export my data?", a: "All accounts can export their records as JSON from Profile. Dashboard also offers a PDF progress report." },
 ];
 
 // ==========================================
@@ -388,15 +388,7 @@ const Features = () => {
               Unlock the ultimate fitness ecosystem. Everything you need to track, analyze, and improve your performance in one app.
             </p>
             
-            {/* Integration Marquee */}
-            <p className="small text-muted fw-bold text-uppercase ls-1 mb-3">Compatible With</p>
-            <div className="integration-scroll justify-content-center d-flex flex-wrap">
-                <IntegrationBadge icon={FaApple} name="Health" />
-                <IntegrationBadge icon={FaGoogle} name="Fit" />
-                <IntegrationBadge icon={FaHeartbeat} name="Wearables" />
-                <IntegrationBadge icon={FaSpotify} name="Spotify" />
-                <IntegrationBadge icon={FaStrava} name="Strava" />
-            </div>
+            <p className="small text-muted">A MERN web application · Works in desktop and mobile browsers · No paid plan</p>
           </Container>
         </div>
       </Reveal>
@@ -426,21 +418,21 @@ const Features = () => {
       {/* 3. DEEP DIVE SECTIONS (Full Animation) */}
       <Container className="py-5 overflow-hidden">
           <DetailedFeatureSection 
-             title="AI-Powered Nutrition"
-             text="Stop guessing what's on your plate. Our advanced computer vision algorithms analyze your meals instantly, providing accurate calorie counts and macro breakdowns. It's like having a nutritionist in your pocket."
+             title="Food Search & Nutrition Logs"
+             text="Search foods by name and choose a portion to estimate calories, protein, carbohydrates and fat. Signed-in users can save and remove food entries in their daily log. These are estimates, not a medical or nutrition assessment."
              img={IMG_AI_SCAN}
-             badge="SMART SCAN"
+             badge="SEARCH & LOG"
           />
           <DetailedFeatureSection 
              title="Advanced Workout Analytics"
-             text="Go beyond simple logs. Visualize your strength curves, 1RM progression, and volume load over time. Identify plateaus before they happen and optimize your training blocks for maximum hypertrophy."
+             text="Record sets, repetitions and weight. Dashboard charts show your recorded workouts and daily progress; the PDF report exports your saved daily log."
              img={IMG_WORKOUT_ANALYTICS}
              isReversed={true}
              badge="DATA DRIVEN"
           />
           <DetailedFeatureSection 
              title="Dynamic Meal Planning"
-             text="Eating healthy shouldn't be hard. Generate weekly shopping lists and recipes tailored to your taste buds and caloric needs. Whether you're cutting, bulking, or maintaining, we handle the math."
+             text="Organize breakfast, lunch, dinner and snacks in a saved daily plan. Update or clear each field whenever your plans change. AI coaching is a separate conversational tool and depends on provider availability."
              img={IMG_MEAL_PLAN}
              badge="AUTOMATION"
           />
@@ -448,7 +440,7 @@ const Features = () => {
 
       {/* 4. COMPARISON TABLE */}
       <Container className="pb-5">
-          <ComparisonTable />
+          <div className="p-4 border rounded-4"><h2 className="h4">Free portfolio access</h2><p className="mb-0">All implemented features are available without payment. Use invented sample information. AI availability depends on free provider quotas.</p></div>
       </Container>
 
       {/* 5. FAQ SECTION */}

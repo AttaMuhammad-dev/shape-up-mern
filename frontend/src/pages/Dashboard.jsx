@@ -1,3 +1,4 @@
+import {localDay} from '../utils/reminders';
 import React, { useState, useMemo, useEffect, useRef } from "react";
 import {
   Container, Card, Row, Col, Button, Modal, Form, ProgressBar, InputGroup, Badge
@@ -10,8 +11,8 @@ import { useGetDailyLogsQuery, useUpdateDailyLogMutation } from "../slices/daily
 import { useSelector } from "react-redux";
 import Loader from "../components/Loader";
 import { toast } from "react-toastify";
-import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
+
+
 import { 
   FaFilePdf, FaEdit, FaFire, FaTint, FaDumbbell, 
   FaWeight, FaUserCircle, FaTrophy, FaWalking, FaChartLine
@@ -134,13 +135,13 @@ const Dashboard = () => {
   }, [userInfo]);
 
   const [showModal, setShowModal] = useState(false);
-  const [logDate, setLogDate] = useState(new Date().toISOString().split("T")[0]);
+  const [logDate, setLogDate] = useState(localDay());
   const [calories, setCalories] = useState("");
   const [water, setWater] = useState("");
   const [weight, setWeight] = useState("");
   const [activeTab, setActiveTab] = useState('overview');
 
-  const todayDate = new Date().toISOString().split("T")[0];
+  const todayDate = localDay();
 
   // --- 2. REAL-TIME STATS ---
   const todayStats = useMemo(() => {
@@ -184,7 +185,7 @@ const Dashboard = () => {
         // Calculate Volume for this specific date from Workouts
         let dailyVolume = 0;
         if (workouts) {
-            const daysWorkouts = workouts.filter(w => w.createdAt && w.createdAt.startsWith(logDateStr));
+            const daysWorkouts = workouts.filter(w => w.date && w.date.startsWith(logDateStr));
             dailyVolume = daysWorkouts.reduce((total, w) => {
                 const wVol = w.exercises?.reduce((acc, ex) => 
                     acc + ((Number(ex.weight) || 0) * (Number(ex.sets) || 0) * (Number(ex.reps) || 0)), 0) || 0;
@@ -226,17 +227,18 @@ const Dashboard = () => {
 
   const saveSteps = async (newSteps) => {
     try {
-        await updateDailyLog({ date: todayDate, steps: newSteps, calories: todayStats.calories, water: todayStats.water, weight: todayStats.weight }).unwrap();
+        await updateDailyLog({ date: todayDate, steps: newSteps }).unwrap();
         toast.success("Steps Synced!");
     } catch (err) { console.error("Step Sync Failed", err); }
   };
 
-  const generatePDF = () => {
+  const generatePDF = async () => {
+    const [{jsPDF},{default:autoTable}]=await Promise.all([import("jspdf"),import("jspdf-autotable")]);
     const doc = new jsPDF();
     doc.text(`Shape Up Report - ${userInfo?.name}`, 14, 20);
     autoTable(doc, {
       startY: 30,
-      head: [['Date', 'Calories', 'Water (ml)', 'Weight (kg)', 'Volume (kg)']],
+      head: [['Date', 'Calories', 'Water (ml)', 'Weight (kg)']],
       body: dailyLogs ? dailyLogs.map(l => [l.date, l.calories, l.water, l.weight]) : [],
       theme: 'grid',
     });

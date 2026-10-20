@@ -13,7 +13,7 @@ const protect = asyncHandler(async (req, res, next) => {
 
       req.user = await User.findById(decoded.userId).select("-password");
 
-      if (!req.user) {
+      if (!req.user || (decoded.sessionVersion||0)!==(req.user.sessionVersion||0)) {
         res.status(401);
         throw new Error("Not authorized, user no longer exists");
       }

@@ -1,150 +1,57 @@
-import asyncHandler from "express-async-handler";
-import generateToken from "../utils/generateToken.js";
-import User from "../models/userModel.js";
-
-// @desc    Auth user/set token
-// @route   POST /api/users/auth
-// @access  Public
-const authUser = asyncHandler(async (req, res) => {
-  const { email, password } = req.body;
-  const user = await User.findOne({ email });
-
-  if (user && (await user.matchPassword(password))) {
-    generateToken(res, user._id);
-    res.status(201).json({
-      _id: user._id,
-      name: user.name,
-      email: user.email,
-      image: user.image,
-      // Return stats
-      age: user.age,
-      height: user.height,
-      weight: user.weight,
-      gender: user.gender,
-      goal: user.goal, 
-    });
-  } else {
-    res.status(401);
-    throw new Error("Invalid user credentials");
+import asyncHandler from 'express-async-handler';
+import generateToken,{clearToken} from '../utils/generateToken.js';
+import User from '../models/userModel.js';
+import {email,password,text,number,choice,invalid} from '../utils/validation.js';
+import {accountModels,removeAccountData} from '../services/accountService.js';
+const publicUser=user=>Object.fromEntries(['_id','name','email','image','age','height','weight','gender','goal'].map(k=>[k,user[k]]));
+const emailQuery=value=>({email:{$regex:'^'+value.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'$',$options:'i'}});
+const authUser=asyncHandler(async(req,res)=>{
+  const address=email(req.body.email),secret=password(req.body.password);
+  const user=await User.findOne(emailQuery(address));
+  if(!user||!await user.matchPassword(secret))return res.status(401).json({message:'Invalid user credentials'});
+  generateToken(res,user._id,user.sessionVersion||0);res.status(200).json(publicUser(user));
+});
+const registerUser=asyncHandler(async(req,res)=>{
+  const name=text(req.body.name,'Name',1,100),address=email(req.body.email),secret=password(req.body.password,true);
+  if(await User.findOne(emailQuery(address)))return res.status(409).json({message:'An account with this email already exists.'});
+  const user=await User.create({name,email:address,password:secret});
+  generateToken(res,user._id,user.sessionVersion||0);res.status(201).json(publicUser(user));
+});
+const logoutUser=asyncHandler(async(req,res)=>{clearToken(res);res.json({message:'Signed out.'});});
+const getUserProfile=asyncHandler(async(req,res)=>res.json(publicUser(req.user)));
+const updateUserProfile=asyncHandler(async(req,res)=>{
+  const user=await User.findById(req.user._id);
+  if(!user)return res.status(404).json({message:'User not found'});
+  let renew=false,pendingPassword;
+  if(req.body.password!==undefined&&req.body.password!==''){
+    const fresh=password(req.body.password,true),current=password(req.body.currentPassword);
+    if(!await user.matchPassword(current))return res.status(400).json({message:'Invalid current password.'});
+    pendingPassword=fresh;renew=true;
   }
+  if(req.body.name!==undefined)user.name=text(req.body.name,'Name',1,100);
+  if(req.body.email!==undefined){const address=email(req.body.email);if(address!==user.email){
+    if(!await user.matchPassword(password(req.body.currentPassword)))return res.status(400).json({message:'Enter your current password to change email.'});
+    const existing=await User.findOne(emailQuery(address));if(existing&&String(existing._id)!==String(user._id))return res.status(409).json({message:'That email is already in use.'});
+    user.email=address;renew=true;
+  }}
+  for(const [key,min,max] of [['age',1,120],['height',30,300],['weight',1,700]])if(req.body[key]!==undefined&&req.body[key]!=='')user[key]=number(req.body[key],key,min,max,key==='age');
+  if(req.body.gender!==undefined)user.gender=choice(req.body.gender,['Male','Female'],'gender');
+  if(req.body.goal!==undefined)user.goal=choice(req.body.goal,['Cut','Bulk','Maintain'],'goal');
+  if(req.body.image!==undefined){const image=req.body.image;let https=false;try{const u=new URL(image);https=u.protocol==='https:'&&!u.username&&!u.password;}catch{}if(typeof image!=='string'||image.length>180000||(image&&!https&&!/^data:image\/(?:jpeg|png|webp);base64,[a-zA-Z0-9+/=]+$/.test(image)))invalid('Use a valid PNG, JPEG or WebP avatar.');user.image=image;}
+  if(pendingPassword)user.password=pendingPassword;
+  if(renew)user.sessionVersion=(user.sessionVersion||0)+1;
+  const updated=await user.save();if(renew)generateToken(res,updated._id,updated.sessionVersion);res.json(publicUser(updated));
 });
-
-// @desc    Register a new user
-// @route   POST /api/users
-// @access  Public
-const registerUser = asyncHandler(async (req, res) => {
-  const { name, email, password } = req.body;
-  const userExists = await User.findOne({ email });
-
-  if (userExists) {
-    res.status(400);
-    throw new Error("User already exists");
-  }
-
-  const user = await User.create({ name, email, password });
-
-  if (user) {
-    generateToken(res, user._id);
-    res.status(201).json({
-      _id: user._id,
-      name: user.name,
-      email: user.email,
-      goal: user.goal,
-    });
-  } else {
-    res.status(400);
-    throw new Error("Invalid user data");
-  }
+const deleteUserAccount=asyncHandler(async(req,res)=>{
+  if(req.body.confirmation!=='DELETE')invalid('Type DELETE to confirm permanent account deletion.');
+  const secret=password(req.body.password),user=await User.findById(req.user._id);
+  if(!user||!await user.matchPassword(secret))return res.status(400).json({message:'Invalid current password. Account was not deleted.'});
+  await removeAccountData(user._id);clearToken(res);res.json({message:'Your account and related data have been deleted.'});
 });
-
-// @desc    Logout user
-// @route   POST /api/users/logout
-// @access  Public
-const logoutUser = asyncHandler(async (req, res) => {
-  res.cookie("jwt", "", { httpOnly: true, expires: new Date(0) });
-  res.status(200).json({ message: "user logged out" });
+const exportUserData=asyncHandler(async(req,res)=>{
+  const data={exportedAt:new Date().toISOString(),profile:publicUser(req.user)};
+  const names=['dailyLogs','workouts','reminders','reviews','dietProfile','mealPlans','waterIntake'];
+  for(let i=0;i<accountModels.length;i++){const [model,field]=accountModels[i];data[names[i]]=await model.find({[field]:req.user._id}).lean();}
+  res.set('Cache-Control','no-store');res.json(data);
 });
-
-// @desc    Get user profile
-// @route   GET /api/users/profile
-// @access  Private
-const getUserProfile = asyncHandler(async (req, res) => {
-  const user = {
-    _id: req.user._id,
-    name: req.user.name,
-    email: req.user.email,
-    image: req.user.image,
-    age: req.user.age,
-    height: req.user.height,
-    weight: req.user.weight,
-    gender: req.user.gender,
-    goal: req.user.goal,
-  };
-  res.status(200).json(user);
-});
-
-// @desc    Update user profile
-// @route   PUT /api/users/profile
-// @access  Private
-const updateUserProfile = asyncHandler(async (req, res) => {
-  const user = await User.findById(req.user._id);
-
-  if (user) {
-    // 1. Password Change Logic (Secure)
-    if (req.body.password) {
-       if (!req.body.currentPassword) {
-          res.status(400);
-          throw new Error("Please enter your current password to set a new one.");
-       }
-
-       const isMatch = await user.matchPassword(req.body.currentPassword);
-       
-       if (!isMatch) {
-          res.status(401);
-          throw new Error("Invalid current password! Please try again.");
-       }
-
-       user.password = req.body.password;
-    }
-
-    // 2. Update Basic Info
-    user.name = req.body.name || user.name;
-    user.email = req.body.email || user.email;
-    
-    // 3. Update Body Stats
-    if(req.body.age) user.age = req.body.age;
-    if(req.body.gender) user.gender = req.body.gender;
-    if(req.body.height) user.height = req.body.height;
-    if(req.body.weight) user.weight = req.body.weight;
-    if(req.body.goal) user.goal = req.body.goal;
-    
-    // 4. Update Image (if provided)
-    if(req.body.image) user.image = req.body.image;
-
-    const updatedUser = await user.save();
-
-    res.json({
-      _id: updatedUser._id,
-      name: updatedUser.name,
-      email: updatedUser.email,
-      image: updatedUser.image,
-      age: updatedUser.age,
-      height: updatedUser.height,
-      weight: updatedUser.weight,
-      gender: updatedUser.gender,
-      goal: updatedUser.goal,
-    });
-  } else {
-    res.status(404);
-    throw new Error('User not found');
-  }
-});
-
-// --- EXPORT ALL FUNCTIONS ---
-export { 
-  authUser, 
-  registerUser, 
-  logoutUser, 
-  getUserProfile, 
-  updateUserProfile 
-};
+export {authUser,registerUser,logoutUser,getUserProfile,updateUserProfile,deleteUserAccount,exportUserData};
