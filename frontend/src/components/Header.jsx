@@ -25,14 +25,16 @@ const Header = () => {
   const seenReminders=useRef(new Set());
   // --- 1. DAILY TARGET NOTIFICATION LOGIC ---
   useEffect(() => {
-    if (userInfo) {
+    if (userInfo && localStorage.getItem("shape-reminders-enabled")!=="false") {
       const today = localDay();
       const lastNotifiedDate = localStorage.getItem("lastDailyGoalNotification");
 
       if (lastNotifiedDate !== today) {
         if (userInfo.calorieGoal > 0) {
-            const audio = new Audio(NOTIFICATION_SOUND);
-            audio.play().catch(() => {});
+            if(localStorage.getItem("shape-reminder-sound")!=="false"){
+              const audio = new Audio(NOTIFICATION_SOUND);
+              audio.play().catch(() => {});
+            }
     
             toast.info(`🎯 Today's Goals: ${userInfo.calorieGoal || 2000} Cal, ${userInfo.waterGoal || 3000}ml Water. You got this!`, {
                 position: "top-center",
@@ -111,6 +113,7 @@ const Header = () => {
 
   const location = useLocation();
   const [isMobileMenuOpen, setMobileMenuOpen] = useState(false);
+  useEffect(()=>setMobileMenuOpen(false),[location.pathname]);
 
   const handleMobileMenuToggle = () => {
     setMobileMenuOpen(!isMobileMenuOpen);
@@ -126,7 +129,7 @@ const Header = () => {
   };
 
   return (
-    <Navbar bg={darkMode ? "dark" : "white"} variant={darkMode ? "dark" : "light"} expand="md" sticky="top" className="shadow-sm">
+    <Navbar bg={darkMode ? "dark" : "white"} variant={darkMode ? "dark" : "light"} expand="md" expanded={isMobileMenuOpen} onToggle={setMobileMenuOpen} sticky="top" className="shadow-sm">
       <Container>
         <Navbar.Brand as={Link} to="/">
           <img src={Logo} alt="logo" style={{ width: "100px", filter: darkMode ? "brightness(1.2)" : "none" }} />
@@ -134,7 +137,7 @@ const Header = () => {
         
         <div className="d-flex align-items-center">
              {/* Mobile Toggle Button */}
-            <Navbar.Toggle onClick={handleMobileMenuToggle} className="me-2">
+            <Navbar.Toggle aria-controls="responsive-navbar-nav" aria-label="Toggle navigation" className="me-2">
             {isMobileMenuOpen ? <CloseIcon /> : <MenuIcon />}
             </Navbar.Toggle>
         </div>

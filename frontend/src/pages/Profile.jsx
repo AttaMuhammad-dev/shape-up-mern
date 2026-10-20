@@ -192,8 +192,8 @@ const Profile = () => {
           toast.error("New passwords do not match.");
           return;
       }
-      if (password.length < 6) {
-          toast.error("Password needs to be at least 6 characters.");
+      if (password.length < 8) {
+          toast.error("Password needs to be at least 8 characters.");
           return;
       }
 
@@ -407,7 +407,6 @@ const Profile = () => {
                                             <Form.Select value={gender} onChange={(e) => setGender(e.target.value)}>
                                                 <option value="Male">Male</option>
                                                 <option value="Female">Female</option>
-                                                <option value="Other">Other</option>
                                             </Form.Select>
                                         </InputGroup>
                                     </Form.Group>
