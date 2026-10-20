@@ -215,7 +215,7 @@ const Dashboard = () => {
   const handleSaveLog = async (e) => {
     e.preventDefault();
     try {
-      await updateDailyLog({ date: logDate, calories: Number(calories), water: Number(water), weight: Number(weight) }).unwrap();
+      await updateDailyLog({ date: logDate, calories: Number(calories), water: Number(water), ...(weight!==''?{weight:Number(weight)}:{}) }).unwrap();
       toast.success("Stats Updated Successfully!");
       handleClose();
     } catch (err) {
@@ -539,7 +539,7 @@ const Dashboard = () => {
             <Form onSubmit={handleSaveLog}>
               <Form.Group className="mb-4">
                 <Form.Label>Select Date</Form.Label>
-                <Form.Control type="date" value={logDate} onChange={(e) => setLogDate(e.target.value)} required />
+                <Form.Control type="date" value={logDate} onChange={(e) => {const date=e.target.value,log=dailyLogs?.find(l=>l.date===date);setLogDate(date);setCalories(log?.calories??'');setWater(log?.water??'');setWeight(log?.weight??'');}} required />
               </Form.Group>
               <Row>
                   <Col md={6}>

@@ -15,7 +15,7 @@ This release finishes the implemented account, fitness, coaching and support wor
 
 ## Tooling
 
-Node 22.12+; frontend uses Vite and Vitest instead of the unmaintained Create React App build stack. JSX files use .jsx extensions. React Router, Axios and jsPDF dependencies are updated. Route-level and PDF code loading avoid downloading the entire dashboard/export stack on the homepage. Existing Vercel output remains frontend/build with same-origin API routing.
+Node 24.x; frontend uses Vite and Vitest instead of the unmaintained Create React App build stack. JSX files use .jsx extensions. React Router, Axios and jsPDF dependencies are updated. Route-level and PDF code loading avoid downloading the entire dashboard/export stack on the homepage. Existing Vercel output remains frontend/build with same-origin API routing.
 
 Run `npm ci` in backend and frontend, `npm --prefix frontend run build`, `npm --prefix backend test`, and `npm --prefix frontend test`. For local work use backend/.env (NODE_ENV=development), `npm --prefix backend start`, and `npm --prefix frontend start`; Vite proxies /api to localhost:9000. No HTTPS or separate CORS configuration is needed for this local proxy.
 
