@@ -41,14 +41,16 @@ const useCounter = (end, duration = 1500) => {
     const [count, setCount] = useState(0);
     useEffect(() => {
         let start = 0;
-        if (end === 0) return;
+        if (end === 0) {setCount(0);return;}
+        let frame;
         const step = (timestamp) => {
             if (!start) start = timestamp;
             const progress = Math.min((timestamp - start) / duration, 1);
             setCount(Math.floor(progress * end));
-            if (progress < 1) window.requestAnimationFrame(step);
+            if (progress < 1) frame=window.requestAnimationFrame(step);
         };
-        window.requestAnimationFrame(step);
+        frame=window.requestAnimationFrame(step);
+        return ()=>window.cancelAnimationFrame(frame);
     }, [end, duration]);
     return count;
 };
@@ -146,11 +148,7 @@ const Dashboard = () => {
   // --- 2. REAL-TIME STATS ---
   const todayStats = useMemo(() => {
     const log = dailyLogs?.find(l => l.date === todayDate) || {};
-    const todayWorkout = workouts?.find(w => w.createdAt && w.createdAt.split("T")[0] === todayDate);
-    
-    const volume = todayWorkout 
-        ? todayWorkout.exercises?.reduce((acc, ex) => acc + (Number(ex.weight) || 0) * (Number(ex.sets) || 0) * (Number(ex.reps) || 0), 0)
-        : 0;
+    const volume=(workouts||[]).filter(w=>w.date?.startsWith(todayDate)).reduce((total,w)=>total+(w.exercises||[]).reduce((acc,ex)=>acc+(Number(ex.weight)||0)*(Number(ex.sets)||0)*(Number(ex.reps)||0),0),0);
 
     return {
         calories: Number(log.calories) || 0,
@@ -370,7 +368,7 @@ const Dashboard = () => {
                                  <Badge bg="warning" text="dark" className="align-self-start rounded-pill px-3">Goal: {GOALS.calories}</Badge>
                              </div>
                              <h2 className="stat-value mb-1"><AnimatedValue value={todayStats.calories} /></h2>
-                             <p className="text-adaptive-muted mb-3 fw-bold small uppercase">Calories Burned</p>
+                             <p className="text-adaptive-muted mb-3 fw-bold small uppercase">Calories Logged</p>
                              <ProgressBar now={getProgress(todayStats.calories, GOALS.calories)} variant="warning" style={{height: "6px", borderRadius: "10px"}} animated />
                          </Card>
                      </Reveal>

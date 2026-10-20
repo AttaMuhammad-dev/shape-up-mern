@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Card, Button, ProgressBar, Spinner } from "react-bootstrap";
+import { Card, Button, ProgressBar, Spinner, Form } from "react-bootstrap";
 import {FaRunning as DirectionsRunIcon} from 'react-icons/fa';
 import {FaCloudUploadAlt as CloudUploadIcon,FaUndo as RestartAltIcon} from 'react-icons/fa';
 import { toast } from "react-toastify";
@@ -11,10 +11,8 @@ const StepTracker = ({ currentSteps = 0, goal = 8000, onSave }) => {
   const [isSaving, setIsSaving] = useState(false);
   
   useEffect(() => {
-    if (!isTracking) {
-        setSteps(currentSteps);
-    }
-  }, [currentSteps, isTracking]);
+    setSteps(currentSteps);
+  }, [currentSteps]);
 
   const lastAcc = useRef({ x: 0, y: 0, z: 0 });
   const lastTime = useRef(0);
@@ -46,11 +44,12 @@ const StepTracker = ({ currentSteps = 0, goal = 8000, onSave }) => {
 
   const toggleTracking = async () => {
     if (!isTracking) {
+      if(typeof DeviceMotionEvent==='undefined'){toast.info('Motion sensing is unavailable here. Enter your steps manually.');return;}
       if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
         try {
           const response = await DeviceMotionEvent.requestPermission();
           if (response !== 'granted') return alert("Permission denied.");
-        } catch (error) { console.error(error); }
+        } catch {toast.error('Motion access was not granted. You can enter steps manually.');return;}
       }
       setIsTracking(true);
     } else {
@@ -86,6 +85,9 @@ const StepTracker = ({ currentSteps = 0, goal = 8000, onSave }) => {
         <h1 className="display-4 font-weight-bold text-dark mb-0">{steps}</h1>
         {/* 👇 Updated to show Goal */}
         <p className="text-muted small">Target: {goal.toLocaleString()} Steps</p>
+        <Form.Label htmlFor="manual-steps">Steps today</Form.Label>
+        <Form.Control id="manual-steps" type="number" min="0" max="200000" step="1" value={steps} disabled={isTracking} onChange={e=>{const value=Number(e.target.value);if(Number.isInteger(value)&&value>=0&&value<=200000)setSteps(value);}} className="mb-2"/>
+        <p className="small text-muted">Motion counting is an estimate on supported phones. You can also enter your steps manually.</p>
         
         {/* 👇 Dynamic Progress Bar */}
         <ProgressBar 
@@ -110,12 +112,12 @@ const StepTracker = ({ currentSteps = 0, goal = 8000, onSave }) => {
                 onClick={handleSync} 
                 className="rounded-circle"
                 disabled={isSaving}
-                title="Save to Laptop"
+                title="Save steps to your account" aria-label="Save steps to your account"
             >
                 {isSaving ? <Spinner size="sm"/> : <CloudUploadIcon />}
             </Button>
 
-            <Button variant="outline-secondary" onClick={resetSteps} className="rounded-circle" size="sm">
+            <Button variant="outline-secondary" onClick={resetSteps} aria-label="Reset unsaved steps" className="rounded-circle" size="sm">
                 <RestartAltIcon />
             </Button>
         </div>
