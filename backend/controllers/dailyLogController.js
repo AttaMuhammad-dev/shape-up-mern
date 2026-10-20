@@ -45,7 +45,7 @@ const updateDailyLog = asyncHandler(async (req, res) => {
     log = await DailyLog.create({
       user: req.user._id,
       date,
-      calories: calories || 0,
+      calories: foodItem ? Number(foodItem.calories) || 0 : calories || 0,
       water: water || 0,
       weight: weight || 0,
       steps: steps || 0, // 👈 ADDED THIS LINE (Creates steps)

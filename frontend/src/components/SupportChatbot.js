@@ -31,7 +31,8 @@ const SupportChatbot = () => {
   useEffect(() => {
     if (isOpen) {
       const body = chatBodyRef.current;
-      const last = body?.querySelector('[data-chat-message]:last-of-type');
+      const rows = body?.querySelectorAll('[data-chat-message]');
+      const last = rows?.[rows.length - 1];
       if (body && last) body.scrollTop = last.offsetTop - body.offsetTop - 8;
     }
   }, [messages, isLoading, isOpen]);
@@ -123,12 +124,13 @@ const SupportChatbot = () => {
   return (
     <div style={{
         position: 'fixed',
-        bottom: '20px',
-        right: '20px',
+        bottom: '16px',
+        right: '16px',
         width: '350px',
-        height: '500px', // Fixed height for popup
+        height: '500px',
+        maxHeight: 'calc(100dvh - 32px)',
         zIndex: 9999,
-        maxWidth: '90vw' // Mobile friendly
+        maxWidth: 'calc(100% - 32px)'
     }}>
       <Card className="h-100 shadow-lg border-0 d-flex flex-column">
         {/* Header with Close Button */}
