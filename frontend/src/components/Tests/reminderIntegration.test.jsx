@@ -1,0 +1,42 @@
+import React from 'react';
+import {vi} from 'vitest';
+import {render,screen,fireEvent,within,waitFor,act} from '@testing-library/react';
+import {Provider} from 'react-redux';
+import configureMockStore from 'redux-mock-store';
+import {MemoryRouter} from 'react-router-dom';
+import {ThemeProvider} from '../../context/ThemeContext';
+import NotificationsPage from '../../pages/NotificationsPage';
+import Header from '../Header';
+import {reminderAudio,SOUND_LIBRARY} from '../../utils/reminderAudio';
+import {localDay} from '../../utils/reminders';
+const mocks=vi.hoisted(()=>({reminders:[]}));
+vi.mock('../../slices/reminderSlice',()=>({useGetRemindersQuery:()=>({data:mocks.reminders,isLoading:false}),useCreateReminderMutation:()=>[vi.fn(),{isLoading:false}],useDeleteReminderMutation:()=>[vi.fn()]}));
+vi.mock('../../slices/usersApiSlice',()=>({useLogoutMutation:()=>[vi.fn()]}));
+vi.mock('react-toastify',()=>({toast:{info:vi.fn(),success:vi.fn(),error:vi.fn()}}));
+const media={pause:vi.fn(),play:vi.fn().mockResolvedValue(),currentTime:0};
+beforeEach(()=>{localStorage.clear();mocks.reminders=[];media.play.mockClear().mockResolvedValue();media.pause.mockClear();vi.stubGlobal('Audio',function(){return media;});reminderAudio.stop();});
+afterEach(()=>{act(()=>reminderAudio.stop());vi.unstubAllGlobals();});
+test('opening Alerts before the reminder request finishes never renders undefined collections',()=>{
+  mocks.reminders=undefined;
+  expect(()=>render(<NotificationsPage/>)).not.toThrow();
+  expect(screen.getByRole('heading',{name:'Command Center'})).toBeInTheDocument();
+});
+test('library Use sound saves the choice and Test selected sound uses that same track',async()=>{
+  render(<NotificationsPage/>);fireEvent.click(screen.getByRole('button',{name:/Library/}));
+  const card=screen.getByText('Gentle Chime').closest('.sound-card');fireEvent.click(within(card).getByRole('button',{name:'Use sound'}));
+  expect(localStorage.getItem('shape-reminder-sound-id')).toBe('gentle');expect(within(card).getByRole('button',{name:'Selected'})).toHaveAttribute('aria-pressed','true');
+  fireEvent.click(screen.getByRole('button',{name:'Close'}));
+  fireEvent.click(screen.getByRole('button',{name:'Test selected sound'}));
+  await waitFor(()=>expect(media.src).toBe(SOUND_LIBRARY.find(s=>s.id==='gentle').url));
+  await waitFor(()=>expect(screen.getByRole('button',{name:'Stop test'})).toBeInTheDocument());
+  fireEvent.click(screen.getByRole('button',{name:'Stop test'}));expect(media.pause).toHaveBeenCalled();
+});
+test('a real Header timer path uses the saved sound, repeats and exposes Stop & dismiss',async()=>{
+  const now=new Date();mocks.reminders=[{_id:'synthetic',date:localDay(now),time:`${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`,title:'Synthetic reminder',priority:'Normal'}];
+  localStorage.setItem('shape-reminder-sound-id','digital');
+  const store=configureMockStore()({auth:{userInfo:{_id:'test-user',name:'Synthetic'}}});
+  render(<Provider store={store}><MemoryRouter><ThemeProvider><Header/></ThemeProvider></MemoryRouter></Provider>);
+  await waitFor(()=>expect(media.src).toBe(SOUND_LIBRARY.find(s=>s.id==='digital').url));
+  await act(async()=>{media.onended();});await act(async()=>{media.onended();});expect(media.play).toHaveBeenCalledTimes(3);
+  fireEvent.click(screen.getByRole('button',{name:'Stop & dismiss'}));expect(media.pause).toHaveBeenCalled();expect(screen.queryByRole('alert',{name:'Active reminder'})).not.toBeInTheDocument();
+});

@@ -14,7 +14,7 @@ export default function Settings(){
  const [reminders,setReminders]=useState(localStorage.getItem('shape-reminders-enabled')!=='false');
  const [sound,setSound]=useState(localStorage.getItem('shape-reminder-sound')!=='false');
  const [permission,setPermission]=useState(typeof Notification==='undefined'?'unavailable':Notification.permission);
- const preference=(key,value,set)=>{localStorage.setItem(key,String(value));set(value);};
+ const preference=(key,value,set)=>{localStorage.setItem(key,String(value));set(value);window.dispatchEvent(new Event('shape-reminder-preferences'));};
  const enableBrowserAlerts=async()=>{if(typeof Notification!=='undefined')setPermission(await Notification.requestPermission());};
  const send=async()=>{
   if(message.trim().length<10)return toast.error('Please write at least 10 characters.');

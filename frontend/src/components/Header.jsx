@@ -8,13 +8,14 @@ import { toast } from "react-toastify";
 
 import {ThemeContext} from '../context/ThemeContext';
 import {dueReminders,localDay} from '../utils/reminders';
+import {reminderAudio} from '../utils/reminderAudio';
 // Icons
 import {FaBars as MenuIcon,FaTimes as CloseIcon,FaBell as NotificationsActiveIcon,FaMoon as DarkModeIcon,FaSun as LightModeIcon} from 'react-icons/fa';
 import Logo from "../assets/images/Logo.png";
 
 // IMPORTS FOR NOTIFICATIONS
 import { useGetRemindersQuery } from "../slices/reminderSlice";
-const NOTIFICATION_SOUND = "https://actions.google.com/sounds/v1/alarms/beep_short.ogg";
+
 
 const Header = () => {
   const { userInfo } = useSelector((state) => state.auth);
@@ -23,6 +24,21 @@ const Header = () => {
   const {theme,toggleTheme}=useContext(ThemeContext);
   const darkMode=theme==='dark';
   const seenReminders=useRef(new Set());
+  const [audioState,setAudioState]=useState(reminderAudio.snapshot());
+  const [activeAlarms,setActiveAlarms]=useState([]);
+  useEffect(()=>reminderAudio.subscribe(setAudioState),[]);
+  useEffect(()=>{
+    seenReminders.current.clear();setActiveAlarms([]);reminderAudio.stop();
+    return ()=>reminderAudio.stop();
+  },[userInfo?._id]);
+  const dismissAlarm=()=>{reminderAudio.stop();setActiveAlarms([]);};
+  const replayAlarm=()=>void reminderAudio.play({persistent:activeAlarms.some(r=>r.priority==='High')});
+  useEffect(()=>{
+    const changed=()=>{if(!reminderAudio.enabled()||localStorage.getItem('shape-reminders-enabled')==='false')reminderAudio.stop();};
+    window.addEventListener('shape-reminder-preferences',changed);
+    return ()=>window.removeEventListener('shape-reminder-preferences',changed);
+  },[]);
+
   // --- 1. DAILY TARGET NOTIFICATION LOGIC ---
   useEffect(() => {
     if (userInfo && localStorage.getItem("shape-reminders-enabled")!=="false") {
@@ -32,8 +48,7 @@ const Header = () => {
       if (lastNotifiedDate !== today) {
         if (userInfo.calorieGoal > 0) {
             if(localStorage.getItem("shape-reminder-sound")!=="false"){
-              const audio = new Audio(NOTIFICATION_SOUND);
-              audio.play().catch(() => {});
+              void reminderAudio.play({kind:'daily',repeats:1});
             }
     
             toast.info(`🎯 Today's Goals: ${userInfo.calorieGoal || 2000} Cal, ${userInfo.waterGoal || 3000}ml Water. You got this!`, {
@@ -64,21 +79,15 @@ const Header = () => {
     const checkReminders = () => {
       if (!reminders || reminders.length === 0 || localStorage.getItem("shape-reminders-enabled")==="false") return;
       const now = new Date();
-      dueReminders(reminders,now,seenReminders.current).forEach((reminder) => {
-        {
-          if(localStorage.getItem("shape-reminder-sound")!=="false"){const audio = new Audio(NOTIFICATION_SOUND);audio.play().catch(() => {});}
-          
-          toast.info(`🔔 It's time: ${reminder.title}`, {
-            position: "top-center",
-            autoClose: 10000,
-            theme: "colored"
-          });
-
-          if ("Notification" in window && Notification.permission === "granted") {
-            new Notification(`Shape Up Alert: ${reminder.title}`);
-          }
-        }
+      const due=dueReminders(reminders,now,seenReminders.current);
+      if(!due.length)return;
+      setActiveAlarms(current=>[...current,...due].filter((item,index,all)=>all.findIndex(other=>other._id===item._id)===index));
+      if(reminderAudio.enabled()&&(reminderAudio.snapshot().kind!=='reminder'||due.some(reminder=>reminder.priority==='High')))void reminderAudio.play({persistent:due.some(reminder=>reminder.priority==='High')});
+      due.forEach(reminder=>{
+        toast.info(`It's time: ${reminder.title}`,{position:'top-center',autoClose:8000});
+        if('Notification' in window&&Notification.permission==='granted')new Notification(`Shape Up Alert: ${reminder.title}`);
       });
+
     };
 
 
@@ -129,6 +138,7 @@ const Header = () => {
   };
 
   return (
+    <>
     <Navbar bg={darkMode ? "dark" : "white"} variant={darkMode ? "dark" : "light"} expand="md" expanded={isMobileMenuOpen} onToggle={setMobileMenuOpen} sticky="top" className="shadow-sm">
       <Container>
         <Navbar.Brand as={Link} to="/">
@@ -165,6 +175,9 @@ const Header = () => {
                 {darkMode ? <LightModeIcon style={{ color: "#f1c40f" }} /> : <DarkModeIcon style={{ color: "#34495e" }} />}
             </Nav.Link>
 
+            {userInfo && !audioState.unlocked && reminderAudio.enabled() && (
+              <Nav.Link onClick={()=>void reminderAudio.play({kind:'test',repeats:1})}>Enable reminder sound</Nav.Link>
+            )}
             {userInfo ? (
               <NavDropdown title={userInfo.name} id="username">
                 <NavDropdown.Item as={Link} to="/pages/profile">Profile</NavDropdown.Item>
@@ -182,6 +195,15 @@ const Header = () => {
         </Navbar.Collapse>
       </Container>
     </Navbar>
+    {activeAlarms.length>0&&<div role="alert" aria-label="Active reminder" className="shadow-lg border rounded-3 p-3 bg-body text-body" style={{position:'fixed',bottom:20,left:'50%',transform:'translateX(-50%)',width:'min(620px,calc(100% - 32px))',zIndex:2100}}>
+      <strong>Reminder: {activeAlarms.map(item=>item.title).join(' · ')}</strong>
+      <p className="small mb-2">{audioState.error||(!reminderAudio.enabled()?'Sound is off in Settings.':audioState.playingId?'Your selected sound is playing. Normal alerts repeat three times; high-priority alerts stop after two minutes.':'Sound finished. You can replay it or dismiss this alert.')}</p>
+      <div className="d-flex flex-wrap gap-2">
+        {reminderAudio.enabled()&&<button className="btn btn-outline-primary btn-sm" onClick={replayAlarm}>{audioState.blocked?'Play sound':'Replay selected sound'}</button>}
+        <button className="btn btn-primary btn-sm" onClick={dismissAlarm}>Stop & dismiss</button>
+      </div>
+    </div>}
+    </>
   );
 };  
 

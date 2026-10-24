@@ -1,4 +1,5 @@
 import {localDay} from '../utils/reminders';
+import {SOUND_LIBRARY,reminderAudio} from '../utils/reminderAudio';
 import React, { useState, useEffect, useMemo } from "react";
 import { Container, Row, Col, Form, Button, Badge, Modal, Tab, Nav } from "react-bootstrap";
 import { toast } from "react-toastify";
@@ -13,19 +14,10 @@ import {
 // ==========================================
 // 1. DATA & CONSTANTS (UPDATED WORKING URLs)
 // ==========================================
-const SOUND_LIBRARY = [
-  // These URLs are more reliable for demo purposes
-  { id: 'classic', name: 'Classic Alarm', url: 'https://assets.mixkit.co/active_storage/sfx/995/995-preview.mp3' },
-  { id: 'digital', name: 'Digital Beep', url: 'https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3' },
-  { id: 'nature', name: 'Morning Birds', url: 'https://assets.mixkit.co/active_storage/sfx/139/139-preview.mp3' }, // Fixed URL
-  { id: 'scifi', name: 'Sci-Fi Alert', url: 'https://assets.mixkit.co/active_storage/sfx/1002/1002-preview.mp3' }, // Fixed URL
-  { id: 'gentle', name: 'Gentle Chime', url: 'https://assets.mixkit.co/active_storage/sfx/1020/1020-preview.mp3' }  // Fixed URL
-];
-
 const CATEGORIES = [
   { id: 'General', label: 'General', icon: <FaBell/>, color: '#0d6efd' },
   { id: 'Workout', label: 'Workout', icon: <FaRunning/>, color: '#6610f2' },
-  { id: 'Meal', label: 'Meal Prep', icon: <FaUtensils/>, color: '#ffc107' },
+  { id: 'Diet', label: 'Meal Prep', icon: <FaUtensils/>, color: '#ffc107' },
   { id: 'Water', label: 'Hydration', icon: <FaTint/>, color: '#0dcaf0' }
 ];
 
@@ -43,26 +35,16 @@ const StatCard = ({ icon, value, label, color, delay }) => (
     </div>
 );
 
-const SoundCard = ({ sound, isPlaying, onPlay, onStop }) => (
-    <div 
-        className={`sound-card ${isPlaying ? 'playing pulse-border' : ''} hover-scale`} 
-        onClick={() => isPlaying ? onStop() : onPlay(sound)}
-    >
-        <div className="d-flex align-items-center">
-            <div className={`p-3 rounded-circle me-3 transition-bg ${isPlaying ? 'bg-danger text-white' : 'bg-light text-muted'}`}>
-                {isPlaying ? <FaStop/> : <FaPlay/>}
-            </div>
-            <div>
-                <h6 className="mb-0 fw-bold">{sound.name}</h6>
-                <small className="text-muted">{isPlaying ? "Playing..." : "Tap to preview"}</small>
-            </div>
-        </div>
-        {isPlaying && (
-            <div className="equalizer">
-                <span></span><span></span><span></span><span></span>
-            </div>
-        )}
+const SoundCard=({sound,isPlaying,selected,onPlay,onStop,onSelect})=>(
+  <div className={`sound-card ${isPlaying?'playing pulse-border':''}`}>
+    <div className="d-flex flex-wrap align-items-center justify-content-between gap-2">
+      <div><h6 className="mb-1 fw-bold">{sound.name}</h6><small>{selected?'Selected for reminders':'Available reminder sound'}</small></div>
+      <div className="d-flex gap-2">
+        <Button size="sm" variant="outline-secondary" aria-label={`${isPlaying?'Stop':'Preview'} ${sound.name}`} onClick={()=>isPlaying?onStop():onPlay(sound)}>{isPlaying?<FaStop/>:<FaPlay/>} {isPlaying?'Stop':'Preview'}</Button>
+        <Button size="sm" variant={selected?'success':'outline-primary'} aria-pressed={selected} onClick={()=>onSelect(sound.id)}>{selected?'Selected':'Use sound'}</Button>
+      </div>
     </div>
+  </div>
 );
 
 // ==========================================
@@ -77,8 +59,9 @@ const NotificationsPage = () => {
   const [priority, setPriority] = useState("Normal");
   
   // Audio State
-  const [audioInstance, setAudioInstance] = useState(null); // Store the Audio object
-  const [playingSoundId, setPlayingSoundId] = useState(null);
+  const [audioState,setAudioState]=useState(reminderAudio.snapshot());
+  const playingSoundId=audioState.playingId;
+  useEffect(()=>reminderAudio.subscribe(setAudioState),[]);
   const [showSoundModal, setShowSoundModal] = useState(false);
 
   // API Hooks
@@ -98,7 +81,7 @@ const NotificationsPage = () => {
   }, [reminders]);
 
   const groupedReminders = useMemo(() => {
-      if (!reminders) return {};
+      if (!reminders) return {today:[],upcoming:[]};
       const todayStr = localDay();
       
       return {
@@ -133,76 +116,17 @@ const NotificationsPage = () => {
     }
   };
   
-  // --- SOUND LOGIC (FIXED) ---
-  const playSound = (sound) => {
-      // Stop currently playing sound if any
-      if (audioInstance) {
-          audioInstance.pause();
-          audioInstance.currentTime = 0;
-      }
-
-      const newAudio = new Audio(sound.url);
-      newAudio.volume = 1.0;
-      
-      newAudio.play().then(() => {
-          setPlayingSoundId(sound.id);
-      }).catch(e => {
-          console.error("Audio Play Error:", e);
-          toast.error("Could not play sound. Check internet connection.");
-      });
-
-      // Cleanup when sound ends
-      newAudio.onended = () => {
-          setPlayingSoundId(null);
-          setAudioInstance(null);
-      };
-      
-      setAudioInstance(newAudio);
+  const stopSound=()=>{if(reminderAudio.snapshot().kind!=='reminder')reminderAudio.stop();};
+  const playSound=async(sound)=>{await reminderAudio.play({soundId:sound.id,repeats:1,kind:'preview'});};
+  const selectSound=(id)=>{
+    if(reminderAudio.select(id))toast.success(`${reminderAudio.selected().name} saved for reminders on this device.`);
+    else toast.error('Could not save sound preference. Check browser storage access.');
   };
-
-  const stopSound = () => {
-      if (audioInstance) {
-          audioInstance.pause();
-          audioInstance.currentTime = 0;
-      }
-      setPlayingSoundId(null);
-      setAudioInstance(null);
-  };
-
-  // Cleanup audio on component unmount or modal close
-  useEffect(() => {
-      return () => {
-          if (audioInstance) {
-              audioInstance.pause();
-              setAudioInstance(null);
-          }
-      };
-  }, [audioInstance]);
-
-  const testSystemAlarm = () => {
-      stopSound(); // Stop any library sound
-      const sound = SOUND_LIBRARY[0]; // Default alarm
-      const audio = new Audio(sound.url);
-      
-      // Loop 3 times logic
-      let count = 0;
-      const playLoop = () => {
-          if(count < 3) {
-              count++;
-              audio.currentTime = 0;
-              audio.play().catch(e => console.error(e));
-          }
-      };
-      audio.addEventListener('ended', playLoop);
-      
-      // Initial play
-      audio.play().catch(e => {
-          console.error(e);
-          toast.error("Failed to play test sound");
-      });
-      
-      setAudioInstance(audio);
-      toast.info("🚨 Testing System Alarm (3x Loop)...");
+  useEffect(()=>()=>{if(reminderAudio.snapshot().kind!=='reminder')reminderAudio.stop();},[]);
+  const testSystemAlarm=async()=>{
+    if(audioState.kind==='test'){reminderAudio.stop();return;}
+    const ok=await reminderAudio.play({kind:'test',repeats:3});
+    if(ok)toast.info(`Testing ${reminderAudio.selected().name}: three plays. Use Stop test to finish early.`);
   };
 
   return (
@@ -314,11 +238,15 @@ const NotificationsPage = () => {
                 onClick={testSystemAlarm} 
                 className="d-flex align-items-center fw-bold px-4 py-2 rounded-pill shadow-sm border-2 hover-scale"
               >
-                 <FaVolumeUp className="me-2"/> Test System
+                 <FaVolumeUp className="me-2"/> {audioState.kind==='test'?'Stop test':'Test selected sound'}
               </Button>
            </div>
         </div>
 
+        <div className="alert alert-info small" role="status">
+          Selected sound: <strong>{reminderAudio.selected().name}</strong>. Normal reminders play three times. High-priority reminders loop until dismissed, up to two minutes. Keep the app open; tap Test selected sound once after opening the browser to allow audio.
+          {audioState.error&&<div className="mt-2 text-danger">{audioState.error}</div>}
+        </div>
         {/* --- STATS ROW --- */}
         <Row className="g-4 mb-5">
             <Col md={4}>
@@ -405,7 +333,7 @@ const NotificationsPage = () => {
                        <Form.Label className="text-adaptive-sub small fw-bold">PRIORITY</Form.Label>
                        <Form.Select value={priority} onChange={(e) => setPriority(e.target.value)}>
                           <option value="Normal">Normal</option>
-                          <option value="High">High Priority (Persistent Alert)</option>
+                          <option value="High">High Priority (loops up to 2 minutes)</option>
                        </Form.Select>
                     </Form.Group>
 
@@ -477,7 +405,7 @@ const NotificationsPage = () => {
                 <Modal.Title className="fw-bold">Alert Sounds</Modal.Title>
             </Modal.Header>
             <Modal.Body>
-                <p className="text-muted small mb-3">Click to preview sounds. These sounds are used for system alerts.</p>
+                <p className="text-muted small mb-3">Preview a sound, then choose Use sound to save it for scheduled reminders on this device.</p>
                 <div className="d-grid gap-2">
                     {SOUND_LIBRARY.map(sound => (
                         <SoundCard 
@@ -486,6 +414,8 @@ const NotificationsPage = () => {
                             isPlaying={playingSoundId === sound.id}
                             onPlay={playSound}
                             onStop={stopSound}
+                            selected={audioState.selectedId===sound.id}
+                            onSelect={selectSound}
                         />
                     ))}
                 </div>

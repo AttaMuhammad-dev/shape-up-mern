@@ -35,3 +35,11 @@ Before sharing a demo link, verify registration, login, refresh, logout, saving 
 From the root: `npm run test:deployment` and `npm run build`.
 
 This is a portfolio project. Do not enter real health information. API, AI and sign-in attempts have per-instance request limits. Add a shared limiter before scaling across instances. Email depends on configured Gmail delivery; AI depends on the external provider's availability and quota, with no uninterrupted-service guarantee. Live coaching with the supplied separate key was confirmed on 20 October 2026; see the saved release evidence for the exact tested scope.
+# Reminder sound update
+
+In Alerts, open **Library**, preview a track and choose **Use sound** to save it on this device. **Test selected sound** plays the same track used by scheduled reminders. Normal alerts repeat three times; high-priority alerts repeat until dismissed, for up to two minutes. Use **Stop & dismiss** to stop an active reminder. If the browser blocks audio, tap **Play sound** on the active alert. Keep the app open; sound/background delivery depends on browser and operating-system support.
+
+The 24 October sound follow-up passes 27 frontend checks. See [RELEASE-20261024.md](RELEASE-20261024.md) for the precise tested scope and limits.
+
+---
+
